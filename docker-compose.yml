@@ -19,7 +19,7 @@ services:
       - kubeguard-network
 
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     environment:
       - POSTGRES_DB=kubeguard
       - POSTGRES_USER=kubeguard
