@@ -16,7 +16,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Test
-    
+    permissions:
+      checks: write
+      contents: read
+
     services:
       postgres:
         image: postgres:17-alpine
