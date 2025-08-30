@@ -1,193 +1,483 @@
 # KubeGuard: Lightweight Kubernetes Security Scanner
 
-KubeGuard is a lightweight, self-hosted security scanner for Kubernetes, built with Java and Spring Boot. It provides developers and DevOps engineers with quick insights into common security misconfigurations, helping to harden applications before and after deployment.
+[![CI/CD Pipeline](https://github.com/mvrao94/KubeGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/mvrao94/KubeGuard/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Coverage](https://codecov.io/gh/mvrao94/KubeGuard/branch/main/graph/badge.svg)](https://codecov.io/gh/mvrao94/KubeGuard)
+[![Docker Pulls](https://img.shields.io/docker/pulls/kubeguard/kubeguard)](https://hub.docker.com/r/kubeguard/kubeguard)
 
----
+KubeGuard is a light-weight, comprehensive, self-hosted Kubernetes security scanner built with Java and Spring Boot. It provides developers and DevOps engineers with actionable insights into security misconfigurations, helping to harden Kubernetes applications before and after deployment.
 
-## Table of Contents
-- [About The Project](#about-the-project)
-- [Key Features](#key-features)
-- [How It Works](#how-it-works)
-- [Built With](#built-with)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation & Local Run](#installation--local-run)
-- [API Usage](#api-usage)
-  - [Static Manifest Scan](#static-manifest-scan)
-  - [Live Cluster Scan](#live-cluster-scan)
-- [Deployment to Kubernetes](#deployment-to-kubernetes)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+## 🚀 Features
 
----
+### Core Functionality
+- **📄 Static Manifest Scanning**: Analyze Kubernetes YAML files for security issues before deployment
+- **🔍 Live Cluster Scanning**: Scan running resources within Kubernetes clusters for active vulnerabilities
+- **🎯 Comprehensive Rule Engine**: 25+ security rules covering CIS Kubernetes Benchmark recommendations
+- **📊 Detailed Reporting**: Rich JSON reports with severity levels, remediation advice, and actionable insights
+- **🔄 Async Processing**: Non-blocking scan execution with real-time status tracking
 
-## About The Project
+### Enterprise Features
+- **🏗️ Production-Ready Architecture**: Built with Spring Boot, PostgreSQL, and containerized deployment
+- **🔐 Security-First Design**: RBAC, network policies, security contexts, and vulnerability scanning
+- **📈 Observability**: Comprehensive monitoring with Prometheus metrics and health checks
+- **🚀 CI/CD Integration**: GitHub Actions pipeline with automated testing and deployment
+- **🐳 Container Native**: Multi-architecture Docker images with security best practices
+- **☸️ Kubernetes Native**: Complete Kubernetes manifests with HPA, PDB, and network policies
 
-Drawing from my experience in building enterprise-grade applications and migrating critical services to cloud-native environments like AWS and GCP, I recognized a common challenge: maintaining security posture in Kubernetes can be complex. While powerful, enterprise security tools are often too heavy for development workflows.
+### Developer Experience
+- **📋 REST API**: Clean, well-documented RESTful API with OpenAPI 3.0 specification
+- **📚 Interactive Documentation**: Swagger UI for API exploration and testing
+- **🧪 Comprehensive Testing**: Unit, integration, and security tests with 80%+ coverage
+- **🔧 Local Development**: Docker Compose setup for easy local development
 
-KubeGuard was born out of the need for a developer-first tool that makes security accessible and automated. It's inspired by direct experience in:
-- Implementing security hardening measures like read-only filesystems and non-root containers.
-- Architecting and developing fully containerized applications with Docker and Kubernetes.
-- Building robust CI/CD pipelines with tools like Jenkins and GitLab to automate quality gates.
+## 📋 Table of Contents
 
-KubeGuard is not meant to replace comprehensive security platforms but to act as a first line of defense, empowering teams to shift security left and catch issues early in the development lifecycle.
+- [Quick Start](#-quick-start)
+- [Installation](#-installation)
+- [API Reference](#-api-reference)
+- [Security Rules](#-security-rules)
+- [Configuration](#-configuration)
+- [Deployment](#-deployment)
+- [Monitoring](#-monitoring)
+- [Development](#-development)
+- [Contributing](#-contributing)
 
----
+## 🚀 Quick Start
 
-## Key Features
+### Using Docker Compose (Recommended)
 
-- **Static Manifest Scanning:** Scan Kubernetes YAML files for security issues before they are deployed.
-- **Live Cluster Scanning:** Scan running resources within a Kubernetes cluster for active vulnerabilities.
-- **Simple REST API:** An intuitive API to trigger scans and retrieve results in JSON format.
-- **CI/CD Friendly:** Packaged as a lightweight container, it's designed to be a seamless step in any CI/CD pipeline.
+```bash
+# Clone the repository
+git clone https://github.com/mvrao94/KubeGuard.git
+cd KubeGuard
 
----
+# Start KubeGuard with all dependencies
+docker-compose up -d
 
-## How It Works
+# Wait for services to be ready
+docker-compose logs -f kubeguard
 
-KubeGuard uses two primary methods for security analysis:
+# Access the application
+open http://localhost:8080/swagger-ui.html
+```
 
-- **Static Scanning:** Parses `.yaml` or `.yml` files, analyzing the structure of Kubernetes objects like Deployments and Pods to find common security anti-patterns (e.g., privileged containers, missing resource limits).
-- **Live Scanning:** Uses the official Kubernetes Java client to connect to the Kubernetes API server and inspect the state of running resources in real-time, providing continuous visibility.
+### Using Kubernetes
 
----
+```bash
+# Deploy to Kubernetes
+kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/namespace.yaml
+kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/rbac.yaml
+kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/postgres.yaml
+kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/deployment.yaml
+kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/service.yaml
 
-## Built With
+# Port forward to access the service
+kubectl port-forward svc/kubeguard 8080:80 -n kubeguard
 
-This project leverages a modern, robust tech stack based on extensive professional experience:
-- Java
-- Spring Boot
-- Hibernate (for potential future stateful features)
-- Docker
-- Kubernetes
+# Access the application
+open http://localhost:8080/swagger-ui.html
+```
 
----
-
-## Getting Started
-
-To get a local copy up and running, follow these simple steps.
+## 📦 Installation
 
 ### Prerequisites
-- Java 11 or higher
-- Apache Maven 3.6+
-- Docker
-- `kubectl` configured to point to a Kubernetes cluster (e.g., Minikube, kind, GKE, EKS)
 
-### Installation & Local Run
+- **Java 17+** (for building from source)
+- **Maven 3.6+** (for building from source)
+- **Docker** (for containerized deployment)
+- **Kubernetes cluster** (for cluster scanning)
+- **kubectl** configured to access your cluster
 
-```sh
-# Clone the repo
-git clone https://github.com/mvrao94/kubeguard.git
-cd kubeguard
+### Building from Source
 
-# Build the project using Maven
-mvn clean install
+```bash
+# Clone the repository
+git clone https://github.com/mvrao94/KubeGuard.git
+cd KubeGuard
+
+# Build the application
+mvn clean package
 
 # Run the application
-java -jar target/kubeguard-0.0.1-SNAPSHOT.jar
+java -jar target/kubeguard-1.0.0.jar
 ```
 
-The application will start on port 8080.
+### Using Pre-built Docker Image
 
----
+```bash
+# Pull the latest image
+docker pull ghcr.io/mvrao94/kubeguard:latest
 
-## API Usage
+# Run with default configuration
+docker run -d -p 8080:8080 ghcr.io/mvrao94/kubeguard:latest
+```
 
-### 1. Static Manifest Scan
+## 🔗 API Reference
 
-This endpoint scans a local directory (on the server where KubeGuard is running) for Kubernetes manifests and analyzes them.
+### Authentication
+Currently, KubeGuard runs without authentication for demo purposes. In production, implement proper authentication and authorization.
 
-- **Endpoint:** `POST /api/scan/manifests`
-- **Content-Type:** `application/json`
-- **Body:**
-  ```json
-  {
-    "path": "/path/to/your/manifests"
-  }
-  ```
+### Core Endpoints
 
-**Example cURL Request:**
+#### Start Manifest Scan
+```http
+POST /api/v1/scan/manifests
+Content-Type: application/json
 
-```sh
-curl -X POST http://localhost:8080/api/scan/manifests \
+{
+  "path": "/path/to/kubernetes/manifests",
+  "description": "Optional scan description"
+}
+```
+
+**Response:**
+```json
+{
+  "scanId": "123e4567-e89b-12d3-a456-426614174000",
+  "message": "Manifest scan started successfully",
+  "status": "RUNNING"
+}
+```
+
+#### Start Cluster Scan
+```http
+GET /api/v1/scan/cluster/{namespace}
+```
+
+**Response:**
+```json
+{
+  "scanId": "123e4567-e89b-12d3-a456-426614174000",
+  "message": "Cluster scan started successfully",
+  "status": "RUNNING"
+}
+```
+
+#### Get Scan Status
+```http
+GET /api/v1/scan/status/{scanId}
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "scanId": "123e4567-e89b-12d3-a456-426614174000",
+  "scanType": "MANIFEST",
+  "target": "/path/to/manifests",
+  "timestamp": "2024-01-15T10:30:00",
+  "status": "COMPLETED",
+  "totalResources": 5,
+  "criticalIssues": 2,
+  "highIssues": 3,
+  "mediumIssues": 1,
+  "lowIssues": 0,
+  "findings": [
+    {
+      "resourceName": "nginx-deployment",
+      "resourceType": "Deployment",
+      "namespace": "default",
+      "ruleId": "CON001",
+      "title": "Privileged Container Detected",
+      "description": "Container is running in privileged mode...",
+      "severity": "CRITICAL",
+      "category": "Container Security",
+      "remediation": "Remove privileged: true from container security context...",
+      "location": "Container: nginx"
+    }
+  ]
+}
+```
+
+#### Get All Reports
+```http
+GET /api/v1/reports?page=0&size=10&sortBy=timestamp&sortDir=desc
+```
+
+#### Get Security Metrics
+```http
+GET /api/v1/reports/analytics/summary
+```
+
+**Response:**
+```json
+{
+  "totalReports": 25,
+  "completedReports": 23,
+  "failedReports": 1,
+  "runningReports": 1,
+  "totalCriticalFindings": 15,
+  "totalHighFindings": 42
+}
+```
+
+### Example Usage
+
+```bash
+# Start a manifest scan
+curl -X POST http://localhost:8080/api/v1/scan/manifests \
   -H "Content-Type: application/json" \
   -d '{"path": "./sample-manifests"}'
+
+# Get scan status
+curl http://localhost:8080/api/v1/scan/status/{scanId}
+
+# Start a cluster scan
+curl http://localhost:8080/api/v1/scan/cluster/default
+
+# Get security metrics
+curl http://localhost:8080/api/v1/reports/analytics/summary
 ```
 
-### 2. Live Cluster Scan
+## 🛡️ Security Rules
 
-This endpoint scans a specific namespace within the Kubernetes cluster that `kubectl` is configured to access.
+KubeGuard implements comprehensive security rules based on industry best practices:
 
-- **Endpoint:** `GET /api/scan/cluster/{namespace}`
+### Container Security Rules
+- **CON001**: Privileged Container Detection (Critical)
+- **CON002**: Container Running as Root (High)
+- **CON003**: Missing Resource Limits (Medium)
+- **CON004**: Missing Readiness Probe (Low)
+- **CON005**: Missing Liveness Probe (Low)
+- **CON006**: Using Latest Tag (Medium)
+- **CON007**: Root Filesystem Not Read-Only (Medium)
 
-**Example cURL Request:**
+### Pod Security Rules
+- **POD001**: Missing Pod Security Context (Medium)
+- **POD002**: Pod Running as Root (High)
+- **POD003**: Missing FSGroup (Low)
 
-```sh
-curl http://localhost:8080/api/scan/cluster/default
+### Service Security Rules
+- **SVC001**: LoadBalancer Service Exposure (Medium)
+
+### Network Security Rules
+- **NET001**: Missing Network Policies (Medium)
+- **NET002**: Ingress Without TLS (High)
+
+### RBAC Rules
+- **RBAC001**: Overly Permissive Roles (High)
+- **RBAC002**: Use of Default Service Account (Medium)
+
+## ⚙️ Configuration
+
+### Application Properties
+
+```yaml
+# application.yml
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kubeguard
+    username: kubeguard
+    password: ${DB_PASSWORD}
+  
+kubeguard:
+  security:
+    rules:
+      enabled: true
+      strict-mode: false
+  scan:
+    max-concurrent: 10
+    timeout-minutes: 30
+    cleanup-days: 7
 ```
 
----
+### Environment Variables
 
-## Deployment to Kubernetes
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SPRING_PROFILES_ACTIVE` | Active Spring profiles | `default` |
+| `DB_PASSWORD` | Database password | `changeme` |
+| `JAVA_OPTS` | JVM options | `-Xmx512m -Xms256m` |
 
-To run KubeGuard inside your cluster, you need to build and push its Docker image, then apply the provided manifests.
+## 🚀 Deployment
 
-### Build and Push the Docker Image
+### Kubernetes Deployment (Production)
 
-```sh
-# Build the image
-docker build -t your-dockerhub-username/kubeguard:latest .
-
-# Push to your registry
-docker push your-dockerhub-username/kubeguard:latest
-```
-
-### Deploy to Kubernetes
-
-- Update the image name in `k8s/deployment.yaml` to point to your image.
-
-**Apply the manifests:**
-
-```sh
-# First, apply the RBAC rules to give KubeGuard read access
+```bash
+# Create namespace and RBAC
+kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/rbac.yaml
 
-# Then, deploy the application
+# Deploy database
+kubectl apply -f k8s/postgres.yaml
+
+# Deploy application
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
+
+# Apply production configurations
+kubectl apply -f k8s/hpa.yaml
+kubectl apply -f k8s/poddisruptionbudget.yaml
+kubectl apply -f k8s/networkpolicy.yaml
 ```
 
+### Helm Deployment (Alternative)
+
+```bash
+# Add Helm repository
+helm repo add kubeguard https://mvrao94.github.io/KubeGuard
+
+# Install KubeGuard
+helm install kubeguard kubeguard/kubeguard \
+  --namespace kubeguard \
+  --create-namespace \
+  --set image.tag=latest \
+  --set ingress.enabled=true \
+  --set ingress.hosts[0].host=kubeguard.yourdomain.com
+```
+
+### Docker Swarm Deployment
+
+```yaml
+# docker-stack.yml
+version: '3.8'
+
+services:
+  kubeguard:
+    image: ghcr.io/mvrao94/kubeguard:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+    secrets:
+      - db_password
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+secrets:
+  db_password:
+    external: true
+```
+
+## 📊 Monitoring
+
+### Health Checks
+
+```bash
+# Application health
+curl http://localhost:8080/actuator/health
+
+# Readiness probe
+curl http://localhost:8080/actuator/health/readiness
+
+# Liveness probe
+curl http://localhost:8080/actuator/health/liveness
+```
+
+### Metrics
+
+KubeGuard exposes Prometheus metrics at `/actuator/prometheus`:
+
+- `kubeguard_scans_total`: Total number of scans
+- `kubeguard_scan_duration_seconds`: Scan duration histogram
+- `kubeguard_findings_total`: Total security findings by severity
+- `kubeguard_active_scans`: Currently active scans
+
+### Grafana Dashboard
+
+Import the provided Grafana dashboard (`monitoring/grafana/dashboards/kubeguard.json`) to visualize:
+
+- Scan statistics over time
+- Security findings trends
+- Application performance metrics
+- Resource utilization
+
+## 🧪 Development
+
+### Local Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/mvrao94/KubeGuard.git
+cd KubeGuard
+
+# Setup development environment
+make setup-dev
+
+# Run tests
+make test
+
+# Start the application
+make run
+```
+
+### Testing
+
+```bash
+# Unit tests
+mvn test
+
+# Integration tests
+mvn verify
+
+# Security scan
+make security-scan
+
+# Generate coverage report
+mvn jacoco:report
+```
+
+### Code Quality
+
+```bash
+# Format code
+make format
+
+# Lint code
+make lint
+
+# Generate documentation
+make docs
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Quick Contribution Guide
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make your changes and add tests**
+4. **Run the test suite**: `make test`
+5. **Commit your changes**: `git commit -m 'Add amazing feature'`
+6. **Push to your branch**: `git push origin feature/amazing-feature`
+7. **Open a Pull Request**
+
+### Development Standards
+
+- **Code Coverage**: Maintain >80% test coverage
+- **Documentation**: Update docs for any API changes
+- **Security**: Follow secure coding practices
+- **Performance**: Consider performance impact of changes
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **Documentation**: [Wiki](https://github.com/mvrao94/KubeGuard/wiki)
+- **Issues**: [GitHub Issues](https://github.com/mvrao94/KubeGuard/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mvrao94/KubeGuard/discussions)
+- **Security Issues**: Email security@kubeguard.io
+
+## 🙏 Acknowledgments
+
+- **CIS Kubernetes Benchmark** for security guidelines
+- **Kubernetes Community** for excellent documentation
+- **Spring Boot Team** for the fantastic framework
+- **All Contributors** who have helped improve KubeGuard
+
 ---
 
-## Roadmap
-
-- [ ] Web UI: Develop a simple frontend dashboard for visualizing scan results.
-- [ ] Expanded Security Checks: Add more security checks based on the CIS Kubernetes Benchmark.
-- [ ] Alerting Integration: Push notifications for critical vulnerabilities to Slack or email.
-- [ ] Cost Optimization Suggestions: Analyze resource requests vs. actual usage to suggest cost-saving opportunities.
-
----
-
-## Contributing
-
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## License
-
-Distributed under the MIT License. See `LICENSE` file for more information.
-
----
-
-## Contact
-
-Project Link: [https://github.com/mvrao94/kubeguard](https://github.com/mvrao94/kubeguard)
+**Made with ❤️ by the KubeGuard Team**
