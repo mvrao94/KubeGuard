@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kubeguard-pdb
+  namespace: kubeguard
+  labels:
+    app.kubernetes.io/name: kubeguard
+    app.kubernetes.io/component: security-scanner
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kubeguard
+      app.kubernetes.io/component: security-scanner
