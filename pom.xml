@@ -5,8 +5,6 @@
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
     <version>4.0.0-M2</version>
-    <relativePath></relativePath>
-    <!-- lookup parent from repository -->
   </parent>
   <groupId>io.github.mvrao94</groupId>
   <artifactId>kubeguard</artifactId>
