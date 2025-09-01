@@ -82,8 +82,8 @@ open http://localhost:8080/swagger-ui.html
 
 ### Prerequisites
 
-- **Java 17+** (for building from source)
-- **Maven 3.6+** (for building from source)
+- **Java 21+** (for building from source)
+- **Maven 3.9+** (for building from source)
 - **Docker** (for containerized deployment)
 - **Kubernetes cluster** (for cluster scanning)
 - **kubectl** configured to access your cluster
