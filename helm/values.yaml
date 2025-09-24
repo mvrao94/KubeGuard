@@ -1,0 +1,67 @@
+apiVersion: v1
+app:
+  name: kubeguard
+  image:
+    repository: kubeguard
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  postgres:
+    image:
+      repository: postgres
+      tag: "15-alpine"
+    database:
+      name: kubeguard
+      user: kubeguard
+      password: ""
+    persistence:
+      enabled: true
+      size: 10Gi
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+  hpa:
+    minReplicas: 2
+    maxReplicas: 10
+    cpuUtilization: 70
+    memoryUtilization: 80
+  ingress:
+    enabled: true
+    host: kubeguard.yourdomain.com
+    tls:
+      enabled: true
+      secretName: kubeguard-tls
+  networkPolicy:
+    enabled: true
+  podDisruptionBudget:
+    minAvailable: 1
+  rbac:
+    enabled: true
+  config:
+    application:
+      logging:
+        level:
+          com.kubeguard: INFO
+          root: WARN
+      management:
+        endpoints:
+          web:
+            exposure:
+              include: health,info,metrics,prometheus
+      kubeguard:
+        security:
+          rules:
+            enabled: true
+            strict-mode: false
+        scan:
+          max-concurrent: 10
+          timeout-minutes: 30
+          cleanup-days: 7
+  secrets:
+    dbPassword: ""  # Base64 encoded value for DB_PASSWORD

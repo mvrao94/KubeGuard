@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-kubeguard
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: kubeguard
+    app.kubernetes.io/component: security-scanner
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: kubeguard
+    app.kubernetes.io/component: security-scanner

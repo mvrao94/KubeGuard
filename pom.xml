@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.0-M2</version>
+    <version>4.0.0-M3</version>
   </parent>
   <groupId>io.github.mvrao94</groupId>
   <artifactId>kubeguard</artifactId>
@@ -12,7 +12,7 @@
   <name>kubeguard</name>
 
   <properties>
-    <java.version>21</java.version>
+    <java.version>25</java.version>
     <testcontainers.version>1.21.3</testcontainers.version>
   </properties>
 
