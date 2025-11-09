@@ -39,7 +39,9 @@ USER kubeguard
 
 WORKDIR /app
 
-# Copy JAR from either build stage or context
+# Copy JAR from build context
+# - In CI: pre-built JAR downloaded from artifact to target/
+# - Locally: built JAR from builder stage copied to target/
 COPY --chown=kubeguard:kubeguard target/kubeguard-*.jar kubeguard.jar
 
 # Expose port
