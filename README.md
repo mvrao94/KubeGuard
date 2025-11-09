@@ -467,6 +467,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 - **Issues**: [GitHub Issues](https://github.com/mvrao94/KubeGuard/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mvrao94/KubeGuard/discussions)
 - **Security Issues**: [Security Policy](SECURITY.md)
 
 ## 🙏 Acknowledgments
