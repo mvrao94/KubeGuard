@@ -13,11 +13,12 @@
 
   <properties>
     <java.version>25</java.version>
-    <testcontainers.version>1.21.3</testcontainers.version>
     <client-java.version>24.0.0</client-java.version>
     <commons-io.version>2.21.0</commons-io.version>
     <jjwt.version>0.12.6</jjwt.version>
+    <mockito.version>5.20.0</mockito.version>
     <springdoc.version>3.0.0-RC1</springdoc.version>
+    <testcontainers.version>1.21.3</testcontainers.version>
   </properties>
 
   <dependencies>
@@ -143,6 +144,7 @@
             <include>**/*Test.java</include>
             <include>**/*Tests.java</include>
           </includes>
+          <argLine>-javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
         </configuration>
       </plugin>
 
