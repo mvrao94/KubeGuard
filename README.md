@@ -82,7 +82,7 @@ open http://localhost:8080/swagger-ui.html
 
 ### Prerequisites
 
-- **Java 21+** (for building from source)
+- **Java 25** (for building from source)
 - **Maven 3.9+** (for building from source)
 - **Docker** (for containerized deployment)
 - **Kubernetes cluster** (for cluster scanning)
@@ -469,7 +469,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Documentation**: [Wiki](https://github.com/mvrao94/KubeGuard/wiki)
 - **Issues**: [GitHub Issues](https://github.com/mvrao94/KubeGuard/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/mvrao94/KubeGuard/discussions)
-- **Security Issues**: Email security@kubeguard.io
+- **Security Issues**: [Security Policy](SECURITY.md)
 
 ## 🙏 Acknowledgments
 
