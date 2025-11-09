@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.0-M3</version>
+    <version>4.0.0-RC2</version>
   </parent>
   <groupId>io.github.mvrao94</groupId>
   <artifactId>kubeguard</artifactId>
@@ -14,6 +14,10 @@
   <properties>
     <java.version>25</java.version>
     <testcontainers.version>1.21.3</testcontainers.version>
+    <client-java.version>24.0.0</client-java.version>
+    <commons-io.version>2.21.0</commons-io.version>
+    <jjwt.version>0.12.6</jjwt.version>
+    <springdoc.version>3.0.0-RC1</springdoc.version>
   </properties>
 
   <dependencies>
@@ -40,7 +44,7 @@
     <dependency>
       <groupId>io.kubernetes</groupId>
       <artifactId>client-java</artifactId>
-      <version>24.0.0</version>
+      <version>${client-java.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -49,7 +53,7 @@
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <version>2.20.0</version>
+      <version>${commons-io.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -70,12 +74,12 @@
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-api</artifactId>
-      <version>0.12.6</version>
+      <version>${jjwt.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-      <version>3.0.0-M1</version>
+      <version>${springdoc.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
