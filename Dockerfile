@@ -1,19 +1,24 @@
 # Multi-stage Dockerfile for KubeGuard
+ARG SKIP_BUILD=false
 
-# Build stage
-FROM maven:3.9.11-eclipse-temurin-25 AS build
+# Build stage (only used for local builds)
+FROM maven:3.9.11-eclipse-temurin-25 AS builder
+ARG SKIP_BUILD
 
 WORKDIR /app
 
-# Copy pom.xml and download dependencies (for better caching)
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
+# Only copy and build if not skipping
+RUN if [ "$SKIP_BUILD" = "false" ]; then \
+      echo "Building from source..."; \
+    else \
+      echo "Skipping build, using pre-built JAR..."; \
+    fi
 
-# Copy source code
+COPY pom.xml* ./
+RUN if [ "$SKIP_BUILD" = "false" ]; then mvn dependency:go-offline -B; fi
+
 COPY src ./src
-
-# Build the application
-RUN mvn clean package -DskipTests -B
+RUN if [ "$SKIP_BUILD" = "false" ]; then mvn clean package -DskipTests -B; fi
 
 # Runtime stage
 FROM eclipse-temurin:25-jre-alpine
@@ -34,8 +39,8 @@ USER kubeguard
 
 WORKDIR /app
 
-# Copy the built jar from build stage
-COPY --from=build --chown=kubeguard:kubeguard /app/target/kubeguard-*.jar kubeguard.jar
+# Copy JAR from either build stage or context
+COPY --chown=kubeguard:kubeguard target/kubeguard-*.jar kubeguard.jar
 
 # Expose port
 EXPOSE 8080
