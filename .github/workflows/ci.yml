@@ -103,7 +103,7 @@ jobs:
       - name: Cache Dependency-Check DB
         uses: actions/cache@v4
         with:
-          path: ~/.dependency-check-data
+          path: ~/.m2/repository/org/owasp/dependency-check-data
           key: ${{ runner.os }}-dependency-check-db-${{ steps.date.outputs.date }}
           restore-keys: |
             ${{ runner.os }}-dependency-check-db-
@@ -114,8 +114,7 @@ jobs:
             -DfailBuildOnCVSS=7 \
             -DskipTestScope=true \
             -Dnvd.api.key=${{ secrets.NVD_API_KEY }} \
-            -Dformat=ALL \
-            -Ddependency-check.data.directory=$HOME/.dependency-check-data
+            -Dformat=ALL
 
       - name: Upload OWASP reports
         uses: actions/upload-artifact@v5
