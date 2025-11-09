@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KubeGuard - Lightweight Kubernetes Security Scanner</title>
     <meta name="description"
-        content="KubeGuard is a lightweight, self-hosted security scanner for Kubernetes, built with Java and Spring Boot to find security issues before and after deployment.">
+        content="KubeGuard is a comprehensive, enterprise-grade security scanner for Kubernetes, built with Java and Spring Boot featuring static manifest scanning, live cluster monitoring, and comprehensive security rule engine.">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -54,11 +54,11 @@
         <!-- Hero Section -->
         <section class="gradient-bg text-white pt-32 pb-20 text-center">
             <div class="container mx-auto px-6">
-                <h1 class="text-4xl md:text-6xl font-bold mb-4 leading-tight">Secure Your Kubernetes Clusters,
-                    Effortlessly.</h1>
+                <h1 class="text-4xl md:text-6xl font-bold mb-4 leading-tight">Enterprise-Grade Kubernetes Security,
+                    Made Simple.</h1>
                 <p class="text-lg md:text-xl text-blue-100 max-w-3xl mx-auto mb-8">
-                    KubeGuard is a lightweight, developer-first security scanner that finds common misconfigurations in
-                    your Kubernetes manifests and live clusters.
+                    KubeGuard is a comprehensive security scanner that implements CIS Kubernetes Benchmark recommendations to protect
+                    your clusters through static analysis and runtime monitoring.
                 </p>
                 <a href="https://github.com/mvrao94/KubeGuard" target="_blank"
                     class="bg-white text-blue-700 font-bold px-8 py-4 rounded-lg text-lg inline-block hover:bg-slate-100 transition-transform hover:scale-105 shadow-lg">
@@ -87,9 +87,9 @@
                                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-bold mb-2">Static Manifest Scanning</h3>
-                        <p class="text-slate-600">Catch issues before they are deployed. KubeGuard scans your YAML files
-                            for privileged containers, missing resource limits, and more.</p>
+                        <h3 class="text-xl font-bold mb-2">Advanced Static Analysis</h3>
+                        <p class="text-slate-600">Catch issues early with 25+ security rules implementing CIS Kubernetes Benchmark recommendations.
+                            Identifies privileged containers, exposed secrets, and insecure configurations.</p>
                     </div>
                     <!-- Feature Card 2 -->
                     <div
@@ -102,9 +102,9 @@
                                     d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-bold mb-2">Live Cluster Scanning</h3>
-                        <p class="text-slate-600">Continuously monitor your running applications. KubeGuard uses the
-                            Kubernetes API to inspect live resources for active vulnerabilities.</p>
+                        <h3 class="text-xl font-bold mb-2">Runtime Protection</h3>
+                        <p class="text-slate-600">Continuously monitor your clusters with live scanning, RBAC analysis, and network policy validation. 
+                            Get real-time alerts on security drift and misconfigurations.</p>
                     </div>
                     <!-- Feature Card 3 -->
                     <div
@@ -117,9 +117,9 @@
                                     d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-bold mb-2">CI/CD Integration</h3>
-                        <p class="text-slate-600">Automate security gates in your pipelines. KubeGuard is a lightweight
-                            container that easily integrates with Jenkins, GitLab, and more.</p>
+                        <h3 class="text-xl font-bold mb-2">Enterprise Integration</h3>
+                        <p class="text-slate-600">Production-ready with built-in Prometheus metrics, health checks, and PostgreSQL persistence.
+                            Seamlessly integrates with CI/CD pipelines and existing security tools.</p>
                     </div>
                     <!-- Feature Card 4 -->
                     <div
@@ -132,9 +132,9 @@
                                     d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-bold mb-2">Simple REST API</h3>
-                        <p class="text-slate-600">Built with Java and Spring Boot, KubeGuard exposes a clean, intuitive
-                            REST API for triggering scans and retrieving results.</p>
+                        <h3 class="text-xl font-bold mb-2">Developer Experience</h3>
+                        <p class="text-slate-600">RESTful API with OpenAPI 3.0 spec and Swagger UI. Async processing, detailed reporting, and 
+                            actionable remediation advice for each finding.</p>
                     </div>
                 </div>
             </div>
@@ -144,27 +144,25 @@
         <section id="how-it-works" class="py-20 bg-slate-50">
             <div class="container mx-auto px-6">
                 <div class="text-center mb-12">
-                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900">A Two-Pronged Approach to Security</h2>
-                    <p class="text-slate-600 mt-2 max-w-2xl mx-auto">KubeGuard provides defense-in-depth by scanning at
-                        every stage of the development lifecycle.</p>
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900">Production-Ready Security</h2>
+                    <p class="text-slate-600 mt-2 max-w-2xl mx-auto">KubeGuard delivers enterprise-grade security with a modern, cloud-native architecture
+                        designed for reliability and scale.</p>
                 </div>
                 <div class="flex flex-col md:flex-row items-center gap-10">
                     <div class="md:w-1/2 bg-white p-8 rounded-xl border border-slate-200 shadow-lg">
-                        <h3 class="text-2xl font-bold mb-3 text-blue-700">1. Static Scan (Pre-Deployment)</h3>
-                        <p class="text-slate-600 mb-4">In your CI/CD pipeline, KubeGuard parses your Kubernetes YAML
-                            files directly. It acts as a quality gate, failing the build if it finds critical issues
-                            before insecure code ever reaches your cluster.</p>
+                        <h3 class="text-2xl font-bold mb-3 text-blue-700">1. Automated Security Gates</h3>
+                        <p class="text-slate-600 mb-4">Integrate with your CI/CD pipeline using our REST API. Block deployments with critical security issues
+                            and track findings over time with detailed JSON reports and metrics.</p>
                         <div class="bg-slate-100 p-4 rounded-lg font-mono text-sm text-slate-700">
-                            <span class="text-green-600">$</span> kubeguard --scan ./manifests --fail-on-critical
+                            <span class="text-green-600">$</span> curl -X POST http://kubeguard/api/v1/scan/manifests -d '{"path": "./k8s"}'
                         </div>
                     </div>
                     <div class="md:w-1/2 bg-white p-8 rounded-xl border border-slate-200 shadow-lg">
-                        <h3 class="text-2xl font-bold mb-3 text-blue-700">2. Live Scan (Post-Deployment)</h3>
-                        <p class="text-slate-600 mb-4">Once deployed, KubeGuard runs as a microservice inside your
-                            cluster. It uses the Kubernetes API to continuously monitor running workloads, catching
-                            manual misconfigurations or drift.</p>
+                        <h3 class="text-2xl font-bold mb-3 text-blue-700">2. Runtime Defense</h3>
+                        <p class="text-slate-600 mb-4">Deploy KubeGuard as a highly available service with autoscaling, network policies,
+                            and RBAC. Monitor live clusters with our comprehensive rules engine and get instant alerts.</p>
                         <div class="bg-slate-100 p-4 rounded-lg font-mono text-sm text-slate-700">
-                            <span class="text-green-600">$</span> curl http://kubeguard/api/scan/cluster/prod
+                            <span class="text-green-600">$</span> curl http://kubeguard/api/v1/scan/cluster/default
                         </div>
                     </div>
                 </div>
