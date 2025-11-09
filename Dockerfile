@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for KubeGuard
 
 # Build stage
-FROM maven:3.9.11-eclipse-temurin-21 AS build
+FROM maven:3.9.11-eclipse-temurin-25 AS build
 
 WORKDIR /app
 
@@ -45,7 +45,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # Environment variables
-ENV JAVA_OPTS="-Xmx512m -Xms256m -server -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+ENV JAVA_OPTS="-Xms256m -Xmx512m -server -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
 ENV SPRING_PROFILES_ACTIVE=docker
 
 # Run the application
