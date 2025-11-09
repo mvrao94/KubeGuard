@@ -51,7 +51,7 @@ jobs:
           cache: maven
 
       - name: Build and test
-        run: mvn -B -ntp -T 1C clean package
+        run: mvn -B -ntp -T 1C clean verify
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/kubeguard_test
           SPRING_DATASOURCE_USERNAME: kubeguard
@@ -96,13 +96,17 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
       - name: Cache Dependency-Check DB
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.dependency-check-data
-          key: ${{ runner.os }}-dependency-check-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-dependency-check
+          path: ~/.dependency-check-data
+          key: ${{ runner.os }}-dependency-check-db-${{ steps.date.outputs.date }}
+          restore-keys: |
+            ${{ runner.os }}-dependency-check-db-
 
       - name: Run OWASP Dependency Check
         run: |
