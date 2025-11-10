@@ -8,7 +8,7 @@
   </parent>
   <groupId>io.github.mvrao94</groupId>
   <artifactId>kubeguard</artifactId>
-  <version>0.0.2-SNAPSHOT</version>
+  <version>0.0.3-SNAPSHOT</version>
   <name>KubeGuard</name>
   <description>Kubernetes Security Scanner - Analyze manifests and clusters for security misconfigurations</description>
   <url>https://github.com/mvrao94/KubeGuard</url>
