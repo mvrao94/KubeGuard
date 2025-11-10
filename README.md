@@ -106,10 +106,10 @@ java -jar target/kubeguard-1.0.0.jar
 
 ```bash
 # Pull the latest image
-docker pull ghcr.io/mvrao94/kubeguard:latest
+docker pull mvrao94/kubeguard:latest
 
 # Run with default configuration
-docker run -d -p 8080:8080 ghcr.io/mvrao94/kubeguard:latest
+docker run -d -p 8080:8080 mvrao94/kubeguard:latest
 ```
 
 ## 🔗 API Reference
@@ -338,7 +338,7 @@ version: '3.8'
 
 services:
   kubeguard:
-    image: ghcr.io/mvrao94/kubeguard:latest
+    image: mvrao94/kubeguard:latest
     ports:
       - "8080:8080"
     environment:
