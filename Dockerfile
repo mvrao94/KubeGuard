@@ -20,48 +20,71 @@ RUN if [ "$SKIP_BUILD" = "false" ]; then mvn dependency:go-offline -B; fi
 COPY src ./src
 RUN if [ "$SKIP_BUILD" = "false" ]; then mvn clean package -DskipTests -B; fi
 
+# Extract layers for Spring Boot layered JAR (only if built)
+RUN if [ "$SKIP_BUILD" = "false" ]; then \
+      mkdir -p target/extracted && \
+      java -Djarmode=layertools -jar target/kubeguard-*.jar extract --destination target/extracted; \
+    fi
+
 # Runtime stage
 FROM eclipse-temurin:25-jre-alpine
 
-# Install curl for health checks
-RUN apk --no-cache add curl
+# Install curl and dumb-init for proper signal handling
+RUN apk --no-cache add curl dumb-init
 
 # Create non-root user
 RUN addgroup -g 1001 kubeguard && \
     adduser -D -u 1001 -G kubeguard kubeguard
 
-# Create directories
-RUN mkdir -p /app/logs /app/config && \
-    chown -R kubeguard:kubeguard /app
+# Create directories with proper permissions
+RUN mkdir -p /app/logs /app/config /tmp && \
+    chown -R kubeguard:kubeguard /app /tmp
 
 # Switch to non-root user
 USER kubeguard
 
 WORKDIR /app
 
-# Copy JAR from build context
-# - In CI: pre-built JAR downloaded from artifact to target/
-# - Locally: built JAR from builder stage copied to target/
+# Copy Spring Boot layers for better caching
+# - In CI: copy pre-built JAR as single layer
+# - Locally: copy extracted layers from builder
+ARG SKIP_BUILD=false
+RUN if [ "$SKIP_BUILD" = "true" ]; then \
+      echo "Using pre-built JAR from CI"; \
+    else \
+      echo "Using layered JAR from builder"; \
+    fi
+
 COPY --chown=kubeguard:kubeguard target/kubeguard-*.jar kubeguard.jar
 
 # Expose port
 EXPOSE 8080
 
-# Health check
+# Health check using actuator
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/actuator/health || exit 1
+    CMD curl -f http://localhost:8080/actuator/health/liveness || exit 1
 
-# Environment variables
-ENV JAVA_OPTS="-Xms256m -Xmx512m -server -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+# Spring Boot optimized JVM flags
+ENV JAVA_OPTS="-XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=75.0 \
+    -XX:InitialRAMPercentage=50.0 \
+    -XX:+UseG1GC \
+    -XX:MaxGCPauseMillis=100 \
+    -XX:+UseStringDeduplication \
+    -XX:+OptimizeStringConcat \
+    -Djava.security.egd=file:/dev/./urandom \
+    -Dspring.backgroundpreinitializer.ignore=true"
+
 ENV SPRING_PROFILES_ACTIVE=docker
 
-# Run the application
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar kubeguard.jar"]
+# Use dumb-init for proper signal handling and exec form for better signal propagation
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["sh", "-c", "exec java $JAVA_OPTS -jar kubeguard.jar"]
 
-# Labels for metadata
-LABEL maintainer="KubeGuard Team" \
-      version="1.0.0" \
-      description="KubeGuard - Kubernetes Security Scanner" \
+# OCI labels
+LABEL org.opencontainers.image.title="KubeGuard" \
+      org.opencontainers.image.description="Kubernetes Security Scanner" \
+      org.opencontainers.image.vendor="KubeGuard Team" \
       org.opencontainers.image.source="https://github.com/mvrao94/KubeGuard" \
       org.opencontainers.image.documentation="https://github.com/mvrao94/KubeGuard/README.md" \
       org.opencontainers.image.licenses="MIT"
