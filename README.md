@@ -1,9 +1,9 @@
 # KubeGuard: Lightweight Kubernetes Security Scanner
 
 [![CI/CD Pipeline](https://github.com/mvrao94/KubeGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/mvrao94/KubeGuard/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
 [![Coverage](https://codecov.io/gh/mvrao94/KubeGuard/graph/badge.svg?token=4ONAKZD2ZQ)](https://codecov.io/gh/mvrao94/KubeGuard)
-[![Docker Pulls](https://img.shields.io/docker/pulls/mvrao94/kubeguard)](https://hub.docker.com/r/mvrao94/kubeguard)
+[![Docker Pulls](https://img.shields.io/docker/pulls/mvrao94/kubeguard?logo=docker)](https://hub.docker.com/r/mvrao94/kubeguard)
 
 KubeGuard is a light-weight, comprehensive, self-hosted Kubernetes security scanner built with Java and Spring Boot. It provides developers and DevOps engineers with actionable insights into security misconfigurations, helping to harden Kubernetes applications before and after deployment.
 
