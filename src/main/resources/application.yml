@@ -80,11 +80,19 @@ logging:
 springdoc:
   api-docs:
     path: /api-docs
+    enabled: true
   swagger-ui:
     path: /swagger-ui.html
+    enabled: true
     tags-sorter: alpha
     operations-sorter: alpha
+    display-request-duration: true
+    doc-expansion: none
+    default-models-expand-depth: 1
+    default-model-expand-depth: 1
   show-actuator: true
+  packages-to-scan: io.github.mvrao94.kubeguard
+  paths-to-match: /api/**
 
 # Application Specific Configuration
 kubeguard:
