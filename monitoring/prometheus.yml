@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'kubeguard-monitor'
+
+scrape_configs:
+  - job_name: 'kubeguard'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['kubeguard:8080']
+        labels:
+          application: 'kubeguard'
+          environment: 'docker'
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  # - "alerts.yml"

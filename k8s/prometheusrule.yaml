@@ -1,0 +1,101 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kubeguard-alerts
+  namespace: kubeguard
+  labels:
+    app.kubernetes.io/name: kubeguard
+    app.kubernetes.io/component: security-scanner
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: kubeguard.rules
+      interval: 30s
+      rules:
+        - alert: KubeGuardHighFailureRate
+          expr: rate(kubeguard_scans_total{status="FAILED"}[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            component: kubeguard
+          annotations:
+            summary: "High scan failure rate detected"
+            description: "KubeGuard scan failure rate is {{ $value | humanize }} per second in namespace {{ $labels.namespace }}"
+            runbook_url: "https://github.com/mvrao94/KubeGuard/blob/main/docs/OBSERVABILITY.md#troubleshooting"
+
+        - alert: KubeGuardServiceDown
+          expr: up{job="kubeguard"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            component: kubeguard
+          annotations:
+            summary: "KubeGuard service is down"
+            description: "KubeGuard service has been down for more than 1 minute in namespace {{ $labels.namespace }}"
+            runbook_url: "https://github.com/mvrao94/KubeGuard/blob/main/docs/OBSERVABILITY.md#troubleshooting"
+
+        - alert: KubeGuardHighMemoryUsage
+          expr: (jvm_memory_used_bytes{area="heap",job="kubeguard"} / jvm_memory_max_bytes{area="heap",job="kubeguard"}) > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            component: kubeguard
+          annotations:
+            summary: "High JVM memory usage"
+            description: "KubeGuard JVM heap memory usage is {{ $value | humanizePercentage }} in pod {{ $labels.pod }}"
+            runbook_url: "https://github.com/mvrao94/KubeGuard/blob/main/docs/OBSERVABILITY.md#high-memory-usage"
+
+        - alert: KubeGuardSlowScanDuration
+          expr: histogram_quantile(0.95, rate(kubeguard_scan_duration_seconds_bucket[5m])) > 60
+          for: 10m
+          labels:
+            severity: warning
+            component: kubeguard
+          annotations:
+            summary: "Slow scan performance"
+            description: "95th percentile scan duration is {{ $value | humanizeDuration }} for type {{ $labels.type }}"
+            runbook_url: "https://github.com/mvrao94/KubeGuard/blob/main/docs/OBSERVABILITY.md#troubleshooting"
+
+        - alert: KubeGuardHighCriticalFindings
+          expr: increase(kubeguard_findings_total{severity="CRITICAL"}[1h]) > 10
+          for: 5m
+          labels:
+            severity: warning
+            component: kubeguard
+          annotations:
+            summary: "High number of critical findings"
+            description: "{{ $value }} critical security findings detected in the last hour"
+            runbook_url: "https://github.com/mvrao94/KubeGuard/blob/main/docs/OBSERVABILITY.md"
+
+        - alert: KubeGuardPodCrashLooping
+          expr: rate(kube_pod_container_status_restarts_total{pod=~"kubeguard-.*"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+            component: kubeguard
+          annotations:
+            summary: "KubeGuard pod is crash looping"
+            description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes"
+            runbook_url: "https://github.com/mvrao94/KubeGuard/blob/main/docs/OBSERVABILITY.md#troubleshooting"
+
+        - alert: KubeGuardHighErrorRate
+          expr: rate(http_server_requests_seconds_count{job="kubeguard",status=~"5.."}[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            component: kubeguard
+          annotations:
+            summary: "High HTTP error rate"
+            description: "HTTP 5xx error rate is {{ $value | humanize }} per second for endpoint {{ $labels.uri }}"
+            runbook_url: "https://github.com/mvrao94/KubeGuard/blob/main/docs/OBSERVABILITY.md#troubleshooting"
+
+        - alert: KubeGuardDatabaseConnectionFailed
+          expr: up{job="kubeguard"} == 1 and health_status{component="database"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            component: kubeguard
+          annotations:
+            summary: "Database connection failed"
+            description: "KubeGuard cannot connect to the database in namespace {{ $labels.namespace }}"
+            runbook_url: "https://github.com/mvrao94/KubeGuard/blob/main/docs/OBSERVABILITY.md#troubleshooting"

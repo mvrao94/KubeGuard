@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 public class KubeguardApplication {
 
-  public static void main(String[] args) {
+  static void main(String[] args) {
     SpringApplication.run(KubeguardApplication.class, args);
   }
 }

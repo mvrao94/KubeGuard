@@ -1,0 +1,57 @@
+groups:
+  - name: kubeguard_alerts
+    interval: 30s
+    rules:
+      - alert: HighFailureRate
+        expr: rate(kubeguard_scans_total{status="FAILED"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High scan failure rate detected"
+          description: "Scan failure rate is {{ $value }} per second"
+
+      - alert: ServiceDown
+        expr: up{job="kubeguard"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "KubeGuard service is down"
+          description: "KubeGuard has been down for more than 1 minute"
+
+      - alert: HighMemoryUsage
+        expr: (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High JVM memory usage"
+          description: "JVM heap memory usage is above 90%"
+
+      - alert: SlowScanDuration
+        expr: histogram_quantile(0.95, rate(kubeguard_scan_duration_seconds_bucket[5m])) > 60
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow scan performance"
+          description: "95th percentile scan duration is {{ $value }} seconds"
+
+      - alert: HighCriticalFindings
+        expr: increase(kubeguard_findings_total{severity="CRITICAL"}[1h]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of critical findings"
+          description: "{{ $value }} critical findings detected in the last hour"
+
+      - alert: DatabaseConnectionFailed
+        expr: up{job="kubeguard"} == 1 and health_status{component="database"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection failed"
+          description: "KubeGuard cannot connect to the database"

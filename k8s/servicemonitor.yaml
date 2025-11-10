@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kubeguard
+  namespace: kubeguard
+  labels:
+    app.kubernetes.io/name: kubeguard
+    app.kubernetes.io/component: security-scanner
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kubeguard
+      app.kubernetes.io/component: security-scanner
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+      scrapeTimeout: 10s
+      scheme: http
+  namespaceSelector:
+    matchNames:
+      - kubeguard

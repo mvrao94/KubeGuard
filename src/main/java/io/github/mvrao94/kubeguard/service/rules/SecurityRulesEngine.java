@@ -102,7 +102,8 @@ public class SecurityRulesEngine {
   }
 
   // --- Network Security Rules ---
-  public List<SecurityFinding> analyzeNetworkPolicies(List<V1NetworkPolicy> networkPolicies, String namespace) {
+  public List<SecurityFinding> analyzeNetworkPolicies(
+      List<V1NetworkPolicy> networkPolicies, String namespace) {
     List<SecurityFinding> findings = new ArrayList<>();
     // NET001: Missing Network Policies
     if (networkPolicies == null || networkPolicies.isEmpty()) {
@@ -112,10 +113,12 @@ public class SecurityRulesEngine {
       finding.setNamespace(namespace);
       finding.setRuleId("NET001");
       finding.setTitle("Missing Network Policies");
-      finding.setDescription("No NetworkPolicy resources found in the namespace. Pods may be open to unrestricted network access.");
+      finding.setDescription(
+          "No NetworkPolicy resources found in the namespace. Pods may be open to unrestricted network access.");
       finding.setSeverity(Severity.MEDIUM);
       finding.setCategory("Network Security");
-      finding.setRemediation("Define NetworkPolicy resources to restrict traffic between pods and from external sources.");
+      finding.setRemediation(
+          "Define NetworkPolicy resources to restrict traffic between pods and from external sources.");
       findings.add(finding);
     }
     return findings;
@@ -132,10 +135,12 @@ public class SecurityRulesEngine {
       SecurityFinding finding = new SecurityFinding();
       finding.setResourceName(ingress.getMetadata() != null ? ingress.getMetadata().getName() : "");
       finding.setResourceType("Ingress");
-      finding.setNamespace(ingress.getMetadata() != null ? ingress.getMetadata().getNamespace() : "");
+      finding.setNamespace(
+          ingress.getMetadata() != null ? ingress.getMetadata().getNamespace() : "");
       finding.setRuleId("NET002");
       finding.setTitle("Ingress Without TLS");
-      finding.setDescription("Ingress resource does not define TLS configuration. Traffic may be unencrypted.");
+      finding.setDescription(
+          "Ingress resource does not define TLS configuration. Traffic may be unencrypted.");
       finding.setSeverity(Severity.HIGH);
       finding.setCategory("Network Security");
       finding.setRemediation("Add TLS configuration to your Ingress to secure traffic with HTTPS.");
@@ -159,10 +164,12 @@ public class SecurityRulesEngine {
         finding.setNamespace(role.getMetadata() != null ? role.getMetadata().getNamespace() : "");
         finding.setRuleId("RBAC001");
         finding.setTitle("Overly Permissive Role");
-        finding.setDescription("Role grants wildcard ('*') permissions. This is overly permissive and a security risk.");
+        finding.setDescription(
+            "Role grants wildcard ('*') permissions. This is overly permissive and a security risk.");
         finding.setSeverity(Severity.HIGH);
         finding.setCategory("RBAC");
-        finding.setRemediation("Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
+        finding.setRemediation(
+            "Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
         findings.add(finding);
         break;
       }
@@ -173,10 +180,12 @@ public class SecurityRulesEngine {
         finding.setNamespace(role.getMetadata() != null ? role.getMetadata().getNamespace() : "");
         finding.setRuleId("RBAC001");
         finding.setTitle("Overly Permissive Role");
-        finding.setDescription("Role grants wildcard ('*') resource access. This is overly permissive and a security risk.");
+        finding.setDescription(
+            "Role grants wildcard ('*') resource access. This is overly permissive and a security risk.");
         finding.setSeverity(Severity.HIGH);
         finding.setCategory("RBAC");
-        finding.setRemediation("Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
+        finding.setRemediation(
+            "Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
         findings.add(finding);
         break;
       }
@@ -193,29 +202,35 @@ public class SecurityRulesEngine {
     for (V1PolicyRule rule : clusterRole.getRules()) {
       if (rule.getVerbs() != null && rule.getVerbs().contains("*")) {
         SecurityFinding finding = new SecurityFinding();
-        finding.setResourceName(clusterRole.getMetadata() != null ? clusterRole.getMetadata().getName() : "");
+        finding.setResourceName(
+            clusterRole.getMetadata() != null ? clusterRole.getMetadata().getName() : "");
         finding.setResourceType("ClusterRole");
         finding.setNamespace("");
         finding.setRuleId("RBAC001");
         finding.setTitle("Overly Permissive ClusterRole");
-        finding.setDescription("ClusterRole grants wildcard ('*') permissions. This is overly permissive and a security risk.");
+        finding.setDescription(
+            "ClusterRole grants wildcard ('*') permissions. This is overly permissive and a security risk.");
         finding.setSeverity(Severity.HIGH);
         finding.setCategory("RBAC");
-        finding.setRemediation("Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
+        finding.setRemediation(
+            "Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
         findings.add(finding);
         break;
       }
       if (rule.getResources() != null && rule.getResources().contains("*")) {
         SecurityFinding finding = new SecurityFinding();
-        finding.setResourceName(clusterRole.getMetadata() != null ? clusterRole.getMetadata().getName() : "");
+        finding.setResourceName(
+            clusterRole.getMetadata() != null ? clusterRole.getMetadata().getName() : "");
         finding.setResourceType("ClusterRole");
         finding.setNamespace("");
         finding.setRuleId("RBAC001");
         finding.setTitle("Overly Permissive ClusterRole");
-        finding.setDescription("ClusterRole grants wildcard ('*') resource access. This is overly permissive and a security risk.");
+        finding.setDescription(
+            "ClusterRole grants wildcard ('*') resource access. This is overly permissive and a security risk.");
         finding.setSeverity(Severity.HIGH);
         finding.setCategory("RBAC");
-        finding.setRemediation("Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
+        finding.setRemediation(
+            "Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
         findings.add(finding);
         break;
       }
@@ -223,20 +238,25 @@ public class SecurityRulesEngine {
     return findings;
   }
 
-  public List<SecurityFinding> analyzePodServiceAccount(V1PodSpec podSpec, String resourceName, String resourceType, String namespace) {
+  public List<SecurityFinding> analyzePodServiceAccount(
+      V1PodSpec podSpec, String resourceName, String resourceType, String namespace) {
     List<SecurityFinding> findings = new ArrayList<>();
     // RBAC002: Use of Default Service Account
-    if (podSpec != null && (podSpec.getServiceAccountName() == null || "default".equals(podSpec.getServiceAccountName()))) {
+    if (podSpec != null
+        && (podSpec.getServiceAccountName() == null
+            || "default".equals(podSpec.getServiceAccountName()))) {
       SecurityFinding finding = new SecurityFinding();
       finding.setResourceName(resourceName);
       finding.setResourceType(resourceType);
       finding.setNamespace(namespace);
       finding.setRuleId("RBAC002");
       finding.setTitle("Use of Default Service Account");
-      finding.setDescription("Resource is using the default service account, which has broad permissions by default.");
+      finding.setDescription(
+          "Resource is using the default service account, which has broad permissions by default.");
       finding.setSeverity(Severity.MEDIUM);
       finding.setCategory("RBAC");
-      finding.setRemediation("Create and use a dedicated service account with least privilege for this workload.");
+      finding.setRemediation(
+          "Create and use a dedicated service account with least privilege for this workload.");
       findings.add(finding);
     }
     return findings;

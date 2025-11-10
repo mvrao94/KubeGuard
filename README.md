@@ -358,7 +358,21 @@ secrets:
     external: true
 ```
 
-## 📊 Monitoring
+## 📊 Monitoring & Observability
+
+KubeGuard includes comprehensive observability with Prometheus metrics, health checks, and Grafana dashboards.
+
+### Quick Start
+
+```bash
+# Start with full monitoring stack
+docker-compose up -d
+
+# Access monitoring tools
+# - Prometheus: http://localhost:9090
+# - Grafana: http://localhost:3000 (admin/admin)
+# - Metrics: http://localhost:8080/actuator/prometheus
+```
 
 ### Health Checks
 
@@ -366,30 +380,58 @@ secrets:
 # Application health
 curl http://localhost:8080/actuator/health
 
-# Readiness probe
+# Kubernetes readiness probe
 curl http://localhost:8080/actuator/health/readiness
 
-# Liveness probe
+# Kubernetes liveness probe
 curl http://localhost:8080/actuator/health/liveness
 ```
 
-### Metrics
+### Key Metrics
 
-KubeGuard exposes Prometheus metrics at `/actuator/prometheus`:
+**Application Metrics:**
+- `kubeguard_scans_total` - Total scans by type and status
+- `kubeguard_scans_active` - Currently running scans
+- `kubeguard_scans_completed` - Completed scans
+- `kubeguard_scans_failed` - Failed scans
+- `kubeguard_scan_duration_seconds` - Scan duration histogram
+- `kubeguard_findings_total` - Security findings by severity
+- `kubeguard_findings_count` - Total findings count
+- `kubeguard_scan_errors` - Scan errors by type
 
-- `kubeguard_scans_total`: Total number of scans
-- `kubeguard_scan_duration_seconds`: Scan duration histogram
-- `kubeguard_findings_total`: Total security findings by severity
-- `kubeguard_active_scans`: Currently active scans
+**System Metrics:**
+- JVM memory, GC, and thread metrics
+- HTTP request duration and counts
+- CPU and system resource usage
 
 ### Grafana Dashboard
 
-Import the provided Grafana dashboard (`monitoring/grafana/dashboards/kubeguard.json`) to visualize:
-
-- Scan statistics over time
+The pre-configured dashboard includes:
+- Real-time scan statistics
+- Performance metrics (p50, p95 latencies)
 - Security findings trends
-- Application performance metrics
-- Resource utilization
+- JVM and system resource monitoring
+- Alert status
+
+**Import Dashboard:**
+1. Access Grafana at http://localhost:3000
+2. Login with admin/admin
+3. Dashboard is auto-provisioned as "KubeGuard Monitoring Dashboard"
+
+### Alerts
+
+Pre-configured Prometheus alerts:
+- High scan failure rate
+- Service availability issues
+- Memory usage warnings
+- Performance degradation
+- Critical security findings
+
+### Documentation
+
+- 📖 [Full Observability Guide](docs/OBSERVABILITY.md)
+- 🚀 [Quick Start Guide](OBSERVABILITY_QUICKSTART.md)
+- 🔧 [Monitoring Setup](monitoring/README.md)
 
 ## 🧪 Development
 
