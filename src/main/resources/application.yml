@@ -12,7 +12,12 @@ server:
 
 spring:
   application:
-    name: kubeguard
+    name: KubeGuard
+
+# Project metadata from pom.xml
+project:
+  version: @project.version@
+  description: @project.description@
 
   # Database Configuration
   datasource:

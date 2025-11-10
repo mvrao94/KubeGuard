@@ -9,7 +9,32 @@
   <groupId>io.github.mvrao94</groupId>
   <artifactId>kubeguard</artifactId>
   <version>0.0.2-SNAPSHOT</version>
-  <name>kubeguard</name>
+  <name>KubeGuard</name>
+  <description>Kubernetes Security Scanner - Analyze manifests and clusters for security misconfigurations</description>
+  <url>https://github.com/mvrao94/KubeGuard</url>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://github.com/mvrao94/KubeGuard/blob/main/LICENSE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>mvrao94</id>
+      <name>KubeGuard Team</name>
+      <email>venkateswararaom07@gmail.com</email>
+      <url>https://github.com/mvrao94</url>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git://github.com/mvrao94/KubeGuard.git</connection>
+    <developerConnection>scm:git:ssh://github.com:mvrao94/KubeGuard.git</developerConnection>
+    <url>https://github.com/mvrao94/KubeGuard</url>
+  </scm>
 
   <properties>
     <java.version>25</java.version>
