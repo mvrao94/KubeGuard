@@ -64,9 +64,21 @@ public class ScanService {
       List<SecurityFinding> allFindings = new ArrayList<>();
       int totalResources = 0;
 
-      Path dir = Paths.get(directoryPath);
+      // Validate and sanitize the path to prevent path traversal attacks
+      Path dir = Paths.get(directoryPath).normalize().toAbsolutePath();
+      
+      // Prevent path traversal by checking for suspicious patterns
+      if (directoryPath.contains("..") || directoryPath.contains("~")) {
+        throw new IllegalArgumentException("Invalid directory path: path traversal not allowed");
+      }
+      
       if (!Files.exists(dir) || !Files.isDirectory(dir)) {
         throw new IllegalArgumentException("Directory does not exist: " + directoryPath);
+      }
+      
+      // Additional security check: ensure the path is readable
+      if (!Files.isReadable(dir)) {
+        throw new IllegalArgumentException("Directory is not readable: " + directoryPath);
       }
 
       try (Stream<Path> paths = Files.walk(dir)) {
