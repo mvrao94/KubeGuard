@@ -1,73 +1,13 @@
+# This is a convenience symlink to the actual docker-compose file
+# The actual file is located at: scripts/docker-compose.yml
+# 
+# To use: docker-compose -f scripts/docker-compose.yml up -d
+#
+# This file exists for backward compatibility but we recommend
+# using the file in the scripts directory directly.
+
 version: '3.8'
-
 services:
-  kubeguard:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - DB_PASSWORD=kubeguard123
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./sample-manifests:/app/manifests:ro
-    networks:
-      - kubeguard-network
-
-  postgres:
-    image: postgres:17-alpine
-    environment:
-      - POSTGRES_DB=kubeguard
-      - POSTGRES_USER=kubeguard
-      - POSTGRES_PASSWORD=kubeguard123
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kubeguard"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - kubeguard-network
-
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--web.enable-lifecycle'
-    networks:
-      - kubeguard-network
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
-    networks:
-      - kubeguard-network
-
-volumes:
-  postgres_data:
-  grafana_data:
-
-networks:
-  kubeguard-network:
-    driver: bridge
+  placeholder:
+    image: alpine:latest
+    command: echo "Please use 'docker-compose -f scripts/docker-compose.yml up -d' instead"

@@ -42,7 +42,7 @@ By participating in this project, you agree to abide by our Code of Conduct. Ple
 ### Local Environment Setup
 1. Install dependencies:
    ```bash
-   ./mvnw clean install
+   ./build-tools/mvnw clean install
    ```
 
 2. Set up the local database:
@@ -52,7 +52,7 @@ By participating in this project, you agree to abide by our Code of Conduct. Ple
 
 3. Run the application:
    ```bash
-   ./mvnw spring-boot:run
+   ./build-tools/mvnw spring-boot:run
    ```
 
 4. Access the application:
@@ -108,17 +108,17 @@ Before submitting your changes, ensure all tests pass:
 
 1. Run unit tests:
    ```bash
-   ./mvnw test
+   ./build-tools/mvnw test
    ```
 
 2. Run integration tests:
    ```bash
-   ./mvnw verify
+   ./build-tools/mvnw verify
    ```
 
 3. Run security scans:
    ```bash
-   ./mvnw verify -Psecurity
+   ./build-tools/mvnw verify -Psecurity
    ```
 
 ## Submitting Changes

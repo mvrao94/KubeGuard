@@ -52,10 +52,10 @@ git clone https://github.com/mvrao94/KubeGuard.git
 cd KubeGuard
 
 # Start KubeGuard with all dependencies
-docker-compose up -d
+docker-compose -f scripts/docker-compose.yml up -d
 
 # Wait for services to be ready
-docker-compose logs -f kubeguard
+docker-compose -f scripts/docker-compose.yml logs -f kubeguard
 
 # Access the application
 open http://localhost:8080/swagger-ui.html
@@ -96,7 +96,7 @@ git clone https://github.com/mvrao94/KubeGuard.git
 cd KubeGuard
 
 # Build the application
-mvn clean package
+./build-tools/mvnw clean package
 
 # Run the application
 java -jar target/kubeguard-1.0.0.jar
@@ -366,7 +366,7 @@ KubeGuard includes comprehensive observability with Prometheus metrics, health c
 
 ```bash
 # Start with full monitoring stack
-docker-compose up -d
+docker-compose -f scripts/docker-compose.yml up -d
 
 # Access monitoring tools
 # - Prometheus: http://localhost:9090
@@ -430,7 +430,7 @@ Pre-configured Prometheus alerts:
 ### Documentation
 
 - 📖 [Full Observability Guide](docs/OBSERVABILITY.md)
-- 🚀 [Quick Start Guide](OBSERVABILITY_QUICKSTART.md)
+- 🚀 [Quick Start Guide](docs/OBSERVABILITY_QUICKSTART.md)
 - 🔧 [Monitoring Setup](monitoring/README.md)
 
 ## 🧪 Development

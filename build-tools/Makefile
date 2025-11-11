@@ -10,15 +10,15 @@ help: ## Show this help message
 
 build: ## Build the application
 	@echo "Building KubeGuard..."
-	mvn clean package -DskipTests
+	../build-tools/mvnw clean package -DskipTests
 
 test: ## Run tests
 	@echo "Running tests..."
-	mvn clean test
+	../build-tools/mvnw clean test
 
 integration-test: ## Run integration tests
 	@echo "Running integration tests..."
-	mvn clean verify
+	../build-tools/mvnw clean verify
 
 run: ## Run the application locally
 	@echo "Starting KubeGuard..."
@@ -26,30 +26,30 @@ run: ## Run the application locally
 
 clean: ## Clean build artifacts
 	@echo "Cleaning..."
-	mvn clean
+	../build-tools/mvnw clean
 
 docker-build: ## Build Docker image
 	@echo "Building Docker image..."
-	docker build -t kubeguard:latest .
+	docker build -f ../scripts/Dockerfile -t kubeguard:latest ..
 
 docker-run: ## Run with Docker Compose
 	@echo "Starting KubeGuard with Docker Compose..."
-	docker-compose up -d
+	docker-compose -f ../scripts/docker-compose.yml up -d
 
 docker-stop: ## Stop Docker Compose
 	@echo "Stopping Docker Compose..."
-	docker-compose down
+	docker-compose -f ../scripts/docker-compose.yml down
 
 docker-logs: ## View Docker logs
-	docker-compose logs -f kubeguard
+	docker-compose -f ../scripts/docker-compose.yml logs -f kubeguard
 
 deploy-local: ## Deploy to local Kubernetes
 	@echo "Deploying to local Kubernetes..."
-	kubectl apply -f k8s/
+	kubectl apply -f ../k8s/
 
 undeploy-local: ## Remove from local Kubernetes
 	@echo "Removing from local Kubernetes..."
-	kubectl delete -f k8s/
+	kubectl delete -f ../k8s/
 
 port-forward: ## Port forward to local deployment
 	@echo "Port forwarding to KubeGuard service..."
@@ -60,19 +60,19 @@ logs: ## View application logs in Kubernetes
 
 security-scan: ## Run security vulnerability scan
 	@echo "Running security scan..."
-	mvn org.owasp:dependency-check-maven:check
+	../build-tools/mvnw org.owasp:dependency-check-maven:check
 
 format: ## Format code
 	@echo "Formatting code..."
-	mvn spring-javaformat:apply
+	../build-tools/mvnw spring-javaformat:apply
 
 lint: ## Lint code
 	@echo "Linting code..."
-	mvn spotbugs:check
+	../build-tools/mvnw spotbugs:check
 
 docs: ## Generate documentation
 	@echo "Generating documentation..."
-	mvn javadoc:javadoc
+	../build-tools/mvnw javadoc:javadoc
 
 # Development environment setup
 setup-dev: ## Setup development environment
@@ -81,17 +81,17 @@ setup-dev: ## Setup development environment
 	cp scripts/pre-commit .git/hooks/pre-commit
 	chmod +x .git/hooks/pre-commit
 	@echo "Starting development dependencies..."
-	docker-compose up -d postgres
+	docker-compose -f ../scripts/docker-compose.yml up -d postgres
 	@echo "Development environment ready!"
 
 # Production deployment helpers
 deploy-staging: ## Deploy to staging environment
 	@echo "Deploying to staging..."
-	kubectl apply -f k8s/ --context=staging
+	kubectl apply -f ../k8s/ --context=staging
 
 deploy-prod: ## Deploy to production environment
 	@echo "Deploying to production..."
-	kubectl apply -f k8s/ --context=production
+	kubectl apply -f ../k8s/ --context=production
 
 # Monitoring
 monitor: ## Open monitoring dashboard

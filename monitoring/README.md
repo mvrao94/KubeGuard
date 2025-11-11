@@ -17,14 +17,14 @@ The easiest way to get started with monitoring:
 
 ```bash
 # Start all services including Prometheus and Grafana
-docker-compose up -d
+docker-compose -f ../scripts/docker-compose.yml up -d
 
 # Check services are running
-docker-compose ps
+docker-compose -f ../scripts/docker-compose.yml ps
 
 # View logs
-docker-compose logs -f prometheus
-docker-compose logs -f grafana
+docker-compose -f ../scripts/docker-compose.yml logs -f prometheus
+docker-compose -f ../scripts/docker-compose.yml logs -f grafana
 ```
 
 Access:
@@ -226,7 +226,7 @@ public class CustomMetrics {
 2. Reload Prometheus configuration:
 ```bash
 # Docker
-docker-compose restart prometheus
+docker-compose -f ../scripts/docker-compose.yml restart prometheus
 
 # Kubernetes
 kubectl apply -f k8s/prometheusrule.yaml
@@ -248,7 +248,7 @@ curl http://localhost:9090/api/v1/targets
 
 3. Check Prometheus logs:
 ```bash
-docker-compose logs prometheus
+docker-compose -f ../scripts/docker-compose.yml logs prometheus
 ```
 
 ### Grafana Connection Issues
@@ -259,7 +259,7 @@ docker-compose logs prometheus
 
 2. Check network connectivity:
 ```bash
-docker-compose exec grafana ping prometheus
+docker-compose -f ../scripts/docker-compose.yml exec grafana ping prometheus
 ```
 
 ### Missing Dashboard Panels

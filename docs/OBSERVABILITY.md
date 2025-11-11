@@ -92,7 +92,7 @@ KubeGuard exposes multiple health endpoints:
 The docker-compose setup includes Prometheus and Grafana:
 
 ```bash
-docker-compose up -d
+docker-compose -f scripts/docker-compose.yml up -d
 ```
 
 Access:
