@@ -51,7 +51,7 @@ jobs:
           cache: maven
 
       - name: Build and test
-        run: ./build-tools/mvnw -B -ntp -T 1C clean verify
+        run: mvn -B -ntp -T 1C clean verify
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/kubeguard_test
           SPRING_DATASOURCE_USERNAME: kubeguard
@@ -110,7 +110,7 @@ jobs:
 
       - name: Run OWASP Dependency Check
         run: |
-          ./build-tools/mvnw -B -ntp org.owasp:dependency-check-maven:check \
+          mvn -B -ntp org.owasp:dependency-check-maven:check \
             -DfailBuildOnCVSS=7 \
             -DskipTestScope=true \
             -Dnvd.api.key=${{ secrets.NVD_API_KEY }} \
@@ -155,7 +155,7 @@ jobs:
       - name: Extract version from pom.xml
         id: version
         run: |
-          VERSION=$(./build-tools/mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
 
