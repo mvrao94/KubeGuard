@@ -39,6 +39,8 @@ public class ScanService {
 
   private CoreV1Api coreV1Api;
   private AppsV1Api appsV1Api;
+  private io.kubernetes.client.openapi.apis.NetworkingV1Api networkingV1Api;
+  private io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api rbacV1Api;
 
   public ScanService() {
     try {
@@ -46,13 +48,15 @@ public class ScanService {
       Configuration.setDefaultApiClient(client);
       this.coreV1Api = new CoreV1Api();
       this.appsV1Api = new AppsV1Api();
+      this.networkingV1Api = new io.kubernetes.client.openapi.apis.NetworkingV1Api();
+      this.rbacV1Api = new io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api();
     } catch (IOException e) {
       logger.warn("Failed to initialize Kubernetes client: {}", e.getMessage());
     }
   }
 
   /** Scan Kubernetes manifest files in a directory */
-  @Async
+  @Async("scanExecutor")
   @Transactional
   public CompletableFuture<ScanReport> scanManifests(String directoryPath, String scanId) {
     logger.info("Starting manifest scan for directory: {} with scanId: {}", directoryPath, scanId);
@@ -113,7 +117,7 @@ public class ScanService {
   }
 
   /** Scan live Kubernetes cluster resources in a namespace */
-  @Async
+  @Async("scanExecutor")
   @Transactional
   public CompletableFuture<ScanReport> scanCluster(String namespace, String scanId) {
     logger.info("Starting cluster scan for namespace: {} with scanId: {}", namespace, scanId);
@@ -163,6 +167,92 @@ public class ScanService {
           allFindings.add(finding);
         }
         totalResources++;
+      }
+
+      // Scan for service account usage in pods
+      for (V1Pod pod : pods.getItems()) {
+        List<SecurityFinding> findings =
+            rulesEngine.analyzePodServiceAccount(
+                pod.getSpec(),
+                pod.getMetadata().getName(),
+                "Pod",
+                pod.getMetadata().getNamespace());
+        for (SecurityFinding finding : findings) {
+          finding.setScanReport(report);
+          allFindings.add(finding);
+        }
+      }
+
+      // Scan NetworkPolicies
+      if (networkingV1Api != null) {
+        try {
+          io.kubernetes.client.openapi.models.V1NetworkPolicyList networkPolicies =
+              networkingV1Api.listNamespacedNetworkPolicy(namespace).execute();
+          List<SecurityFinding> findings =
+              rulesEngine.analyzeNetworkPolicies(networkPolicies.getItems(), namespace);
+          for (SecurityFinding finding : findings) {
+            finding.setScanReport(report);
+            allFindings.add(finding);
+          }
+          totalResources += networkPolicies.getItems().size();
+        } catch (ApiException e) {
+          logger.warn("Failed to scan NetworkPolicies: {}", e.getMessage());
+        }
+      }
+
+      // Scan Ingresses
+      if (networkingV1Api != null) {
+        try {
+          io.kubernetes.client.openapi.models.V1IngressList ingresses =
+              networkingV1Api.listNamespacedIngress(namespace).execute();
+          for (io.kubernetes.client.openapi.models.V1Ingress ingress : ingresses.getItems()) {
+            List<SecurityFinding> findings = rulesEngine.analyzeIngress(ingress);
+            for (SecurityFinding finding : findings) {
+              finding.setScanReport(report);
+              allFindings.add(finding);
+            }
+            totalResources++;
+          }
+        } catch (ApiException e) {
+          logger.warn("Failed to scan Ingresses: {}", e.getMessage());
+        }
+      }
+
+      // Scan Roles
+      if (rbacV1Api != null) {
+        try {
+          io.kubernetes.client.openapi.models.V1RoleList roles =
+              rbacV1Api.listNamespacedRole(namespace).execute();
+          for (io.kubernetes.client.openapi.models.V1Role role : roles.getItems()) {
+            List<SecurityFinding> findings = rulesEngine.analyzeRole(role);
+            for (SecurityFinding finding : findings) {
+              finding.setScanReport(report);
+              allFindings.add(finding);
+            }
+            totalResources++;
+          }
+        } catch (ApiException e) {
+          logger.warn("Failed to scan Roles: {}", e.getMessage());
+        }
+      }
+
+      // Scan ClusterRoles (cluster-wide, but we'll associate with this scan)
+      if (rbacV1Api != null) {
+        try {
+          io.kubernetes.client.openapi.models.V1ClusterRoleList clusterRoles =
+              rbacV1Api.listClusterRole().execute();
+          for (io.kubernetes.client.openapi.models.V1ClusterRole clusterRole :
+              clusterRoles.getItems()) {
+            List<SecurityFinding> findings = rulesEngine.analyzeClusterRole(clusterRole);
+            for (SecurityFinding finding : findings) {
+              finding.setScanReport(report);
+              allFindings.add(finding);
+            }
+            totalResources++;
+          }
+        } catch (ApiException e) {
+          logger.warn("Failed to scan ClusterRoles: {}", e.getMessage());
+        }
       }
 
       // Update report with findings
@@ -269,6 +359,55 @@ public class ScanService {
                   finding.setLocation(fileName);
                 });
             findings.addAll(serviceFindings);
+          }
+          break;
+
+        case "Ingress":
+          io.kubernetes.client.openapi.models.V1Ingress ingress = parseIngress(resource);
+          if (ingress != null) {
+            List<SecurityFinding> ingressFindings = rulesEngine.analyzeIngress(ingress);
+            ingressFindings.forEach(
+                finding -> {
+                  finding.setScanReport(report);
+                  finding.setLocation(fileName);
+                });
+            findings.addAll(ingressFindings);
+          }
+          break;
+
+        case "NetworkPolicy":
+          io.kubernetes.client.openapi.models.V1NetworkPolicy networkPolicy =
+              parseNetworkPolicy(resource);
+          if (networkPolicy != null) {
+            // NetworkPolicy analysis is done at namespace level, but we can still parse it
+            logger.debug("NetworkPolicy found in manifest: {}", fileName);
+          }
+          break;
+
+        case "Role":
+          io.kubernetes.client.openapi.models.V1Role role = parseRole(resource);
+          if (role != null) {
+            List<SecurityFinding> roleFindings = rulesEngine.analyzeRole(role);
+            roleFindings.forEach(
+                finding -> {
+                  finding.setScanReport(report);
+                  finding.setLocation(fileName);
+                });
+            findings.addAll(roleFindings);
+          }
+          break;
+
+        case "ClusterRole":
+          io.kubernetes.client.openapi.models.V1ClusterRole clusterRole =
+              parseClusterRole(resource);
+          if (clusterRole != null) {
+            List<SecurityFinding> clusterRoleFindings = rulesEngine.analyzeClusterRole(clusterRole);
+            clusterRoleFindings.forEach(
+                finding -> {
+                  finding.setScanReport(report);
+                  finding.setLocation(fileName);
+                });
+            findings.addAll(clusterRoleFindings);
           }
           break;
 
@@ -522,6 +661,175 @@ public class ScanService {
 
     // Add findings to report
     findings.forEach(report::addFinding);
+  }
+
+  private io.kubernetes.client.openapi.models.V1Ingress parseIngress(
+      Map<String, Object> resource) {
+    try {
+      io.kubernetes.client.openapi.models.V1Ingress ingress =
+          new io.kubernetes.client.openapi.models.V1Ingress();
+
+      // Parse metadata
+      @SuppressWarnings("unchecked")
+      Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
+      if (metadata != null) {
+        V1ObjectMeta objectMeta = new V1ObjectMeta();
+        objectMeta.setName((String) metadata.get("name"));
+        objectMeta.setNamespace((String) metadata.get("namespace"));
+        ingress.setMetadata(objectMeta);
+      }
+
+      // Parse spec
+      @SuppressWarnings("unchecked")
+      Map<String, Object> spec = (Map<String, Object>) resource.get("spec");
+      if (spec != null) {
+        io.kubernetes.client.openapi.models.V1IngressSpec ingressSpec =
+            new io.kubernetes.client.openapi.models.V1IngressSpec();
+
+        // Check for TLS configuration
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> tls = (List<Map<String, Object>>) spec.get("tls");
+        if (tls != null && !tls.isEmpty()) {
+          List<io.kubernetes.client.openapi.models.V1IngressTLS> tlsList = new ArrayList<>();
+          for (Map<String, Object> tlsEntry : tls) {
+            io.kubernetes.client.openapi.models.V1IngressTLS ingressTls =
+                new io.kubernetes.client.openapi.models.V1IngressTLS();
+            @SuppressWarnings("unchecked")
+            List<String> hosts = (List<String>) tlsEntry.get("hosts");
+            ingressTls.setHosts(hosts);
+            ingressTls.setSecretName((String) tlsEntry.get("secretName"));
+            tlsList.add(ingressTls);
+          }
+          ingressSpec.setTls(tlsList);
+        }
+
+        ingress.setSpec(ingressSpec);
+      }
+
+      return ingress;
+    } catch (Exception e) {
+      logger.error("Error parsing Ingress: ", e);
+      return null;
+    }
+  }
+
+  private io.kubernetes.client.openapi.models.V1NetworkPolicy parseNetworkPolicy(
+      Map<String, Object> resource) {
+    try {
+      io.kubernetes.client.openapi.models.V1NetworkPolicy networkPolicy =
+          new io.kubernetes.client.openapi.models.V1NetworkPolicy();
+
+      // Parse metadata
+      @SuppressWarnings("unchecked")
+      Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
+      if (metadata != null) {
+        V1ObjectMeta objectMeta = new V1ObjectMeta();
+        objectMeta.setName((String) metadata.get("name"));
+        objectMeta.setNamespace((String) metadata.get("namespace"));
+        networkPolicy.setMetadata(objectMeta);
+      }
+
+      return networkPolicy;
+    } catch (Exception e) {
+      logger.error("Error parsing NetworkPolicy: ", e);
+      return null;
+    }
+  }
+
+  private io.kubernetes.client.openapi.models.V1Role parseRole(Map<String, Object> resource) {
+    try {
+      io.kubernetes.client.openapi.models.V1Role role =
+          new io.kubernetes.client.openapi.models.V1Role();
+
+      // Parse metadata
+      @SuppressWarnings("unchecked")
+      Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
+      if (metadata != null) {
+        V1ObjectMeta objectMeta = new V1ObjectMeta();
+        objectMeta.setName((String) metadata.get("name"));
+        objectMeta.setNamespace((String) metadata.get("namespace"));
+        role.setMetadata(objectMeta);
+      }
+
+      // Parse rules
+      @SuppressWarnings("unchecked")
+      List<Map<String, Object>> rules = (List<Map<String, Object>>) resource.get("rules");
+      if (rules != null) {
+        List<io.kubernetes.client.openapi.models.V1PolicyRule> policyRules = new ArrayList<>();
+        for (Map<String, Object> ruleMap : rules) {
+          io.kubernetes.client.openapi.models.V1PolicyRule policyRule =
+              new io.kubernetes.client.openapi.models.V1PolicyRule();
+
+          @SuppressWarnings("unchecked")
+          List<String> verbs = (List<String>) ruleMap.get("verbs");
+          policyRule.setVerbs(verbs);
+
+          @SuppressWarnings("unchecked")
+          List<String> resources = (List<String>) ruleMap.get("resources");
+          policyRule.setResources(resources);
+
+          @SuppressWarnings("unchecked")
+          List<String> apiGroups = (List<String>) ruleMap.get("apiGroups");
+          policyRule.setApiGroups(apiGroups);
+
+          policyRules.add(policyRule);
+        }
+        role.setRules(policyRules);
+      }
+
+      return role;
+    } catch (Exception e) {
+      logger.error("Error parsing Role: ", e);
+      return null;
+    }
+  }
+
+  private io.kubernetes.client.openapi.models.V1ClusterRole parseClusterRole(
+      Map<String, Object> resource) {
+    try {
+      io.kubernetes.client.openapi.models.V1ClusterRole clusterRole =
+          new io.kubernetes.client.openapi.models.V1ClusterRole();
+
+      // Parse metadata
+      @SuppressWarnings("unchecked")
+      Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
+      if (metadata != null) {
+        V1ObjectMeta objectMeta = new V1ObjectMeta();
+        objectMeta.setName((String) metadata.get("name"));
+        clusterRole.setMetadata(objectMeta);
+      }
+
+      // Parse rules
+      @SuppressWarnings("unchecked")
+      List<Map<String, Object>> rules = (List<Map<String, Object>>) resource.get("rules");
+      if (rules != null) {
+        List<io.kubernetes.client.openapi.models.V1PolicyRule> policyRules = new ArrayList<>();
+        for (Map<String, Object> ruleMap : rules) {
+          io.kubernetes.client.openapi.models.V1PolicyRule policyRule =
+              new io.kubernetes.client.openapi.models.V1PolicyRule();
+
+          @SuppressWarnings("unchecked")
+          List<String> verbs = (List<String>) ruleMap.get("verbs");
+          policyRule.setVerbs(verbs);
+
+          @SuppressWarnings("unchecked")
+          List<String> resources = (List<String>) ruleMap.get("resources");
+          policyRule.setResources(resources);
+
+          @SuppressWarnings("unchecked")
+          List<String> apiGroups = (List<String>) ruleMap.get("apiGroups");
+          policyRule.setApiGroups(apiGroups);
+
+          policyRules.add(policyRule);
+        }
+        clusterRole.setRules(policyRules);
+      }
+
+      return clusterRole;
+    } catch (Exception e) {
+      logger.error("Error parsing ClusterRole: ", e);
+      return null;
+    }
   }
 
   public Optional<ScanReport> getScanReport(String scanId) {
