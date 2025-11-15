@@ -231,9 +231,9 @@ curl http://localhost:8080/api/v1/reports/analytics/summary
 
 ## 🛡️ Security Rules
 
-KubeGuard implements comprehensive security rules based on industry best practices:
+KubeGuard implements 27+ comprehensive security rules based on CIS Kubernetes Benchmark and industry best practices:
 
-### Container Security Rules
+### Container Security Rules (12 rules)
 - **CON001**: Privileged Container Detection (Critical)
 - **CON002**: Container Running as Root (High)
 - **CON003**: Missing Resource Limits (Medium)
@@ -241,22 +241,40 @@ KubeGuard implements comprehensive security rules based on industry best practic
 - **CON005**: Missing Liveness Probe (Low)
 - **CON006**: Using Latest Tag (Medium)
 - **CON007**: Root Filesystem Not Read-Only (Medium)
+- **CON008**: RunAsNonRoot Not Enforced (High)
+- **CON009**: Privilege Escalation Allowed (High)
+- **CON010**: Additional Capabilities Added (Medium)
+- **CON011**: Capabilities Not Dropped (Medium)
+- **CON012**: Missing Startup Probe (Low)
 
-### Pod Security Rules
+### Pod Security Rules (7 rules)
 - **POD001**: Missing Pod Security Context (Medium)
 - **POD002**: Pod Running as Root (High)
 - **POD003**: Missing FSGroup (Low)
+- **POD004**: Host Network Enabled (High)
+- **POD005**: Host PID Namespace Enabled (High)
+- **POD006**: Host IPC Namespace Enabled (High)
+- **POD007**: HostPath Volume Detected (Critical)
 
-### Service Security Rules
+### Service Security Rules (1 rule)
 - **SVC001**: LoadBalancer Service Exposure (Medium)
 
-### Network Security Rules
+### Network Security Rules (2 rules)
 - **NET001**: Missing Network Policies (Medium)
 - **NET002**: Ingress Without TLS (High)
 
-### RBAC Rules
+### RBAC Rules (2 rules)
 - **RBAC001**: Overly Permissive Roles (High)
 - **RBAC002**: Use of Default Service Account (Medium)
+
+### Secret Management Rules (2 rules)
+- **SEC001**: Hardcoded Secret in Environment Variable (Critical)
+- **SEC002**: Service Account Token Auto-Mount Enabled (Low)
+
+### Resource Management Rules (1 rule)
+- **RES001**: Missing Resource Requests (Medium)
+
+For detailed information about each rule, including remediation steps and compliance mapping, see the [Security Rules Reference](docs/SECURITY_RULES_REFERENCE.md).
 
 ## ⚙️ Configuration
 
