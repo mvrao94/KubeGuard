@@ -11,29 +11,68 @@ import org.springframework.stereotype.Component;
 @Component
 public class SecurityRulesEngine {
 
+  /**
+   * Helper method to create a SecurityFinding object
+   */
+  private SecurityFinding createFinding(
+      String resourceName,
+      String resourceType,
+      String namespace,
+      String ruleId,
+      String title,
+      String description,
+      Severity severity,
+      String category,
+      String remediation,
+      String location) {
+    SecurityFinding finding = new SecurityFinding();
+    finding.setResourceName(resourceName);
+    finding.setResourceType(resourceType);
+    finding.setNamespace(namespace);
+    finding.setRuleId(ruleId);
+    finding.setTitle(title);
+    finding.setDescription(description);
+    finding.setSeverity(severity);
+    finding.setCategory(category);
+    finding.setRemediation(remediation);
+    if (location != null) {
+      finding.setLocation(location);
+    }
+    return finding;
+  }
+
   public List<SecurityFinding> analyzeDeployment(V1Deployment deployment) {
     List<SecurityFinding> findings = new ArrayList<>();
 
-    if (deployment.getSpec() == null
-        || deployment.getSpec().getTemplate() == null
-        || deployment.getSpec().getTemplate().getSpec() == null) {
+    if (deployment == null 
+        || deployment.getMetadata() == null
+        || deployment.getSpec() == null) {
       return findings;
     }
 
-    V1PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
-    String resourceName = deployment.getMetadata().getName();
-    String namespace = deployment.getMetadata().getNamespace();
+    V1DeploymentSpec spec = deployment.getSpec();
+    V1PodTemplateSpec template = spec.getTemplate();
+    if (template == null || template.getSpec() == null) {
+      return findings;
+    }
+
+    V1PodSpec podSpec = template.getSpec();
+    V1ObjectMeta metadata = deployment.getMetadata();
+    String resourceName = metadata.getName() != null ? metadata.getName() : "unknown";
+    String namespace = metadata.getNamespace() != null ? metadata.getNamespace() : "default";
 
     // Check containers
-    if (podSpec.getContainers() != null) {
-      for (V1Container container : podSpec.getContainers()) {
+    List<V1Container> containers = podSpec.getContainers();
+    if (containers != null) {
+      for (V1Container container : containers) {
         findings.addAll(analyzeContainer(container, resourceName, "Deployment", namespace));
       }
     }
 
     // Check init containers
-    if (podSpec.getInitContainers() != null) {
-      for (V1Container container : podSpec.getInitContainers()) {
+    List<V1Container> initContainers = podSpec.getInitContainers();
+    if (initContainers != null) {
+      for (V1Container container : initContainers) {
         findings.addAll(analyzeContainer(container, resourceName, "Deployment", namespace));
       }
     }
@@ -58,16 +97,18 @@ public class SecurityRulesEngine {
   public List<SecurityFinding> analyzePod(V1Pod pod) {
     List<SecurityFinding> findings = new ArrayList<>();
 
-    if (pod.getSpec() == null) {
+    if (pod == null || pod.getMetadata() == null || pod.getSpec() == null) {
       return findings;
     }
 
-    String resourceName = pod.getMetadata().getName();
-    String namespace = pod.getMetadata().getNamespace();
+    V1ObjectMeta metadata = pod.getMetadata();
+    String resourceName = metadata.getName() != null ? metadata.getName() : "unknown";
+    String namespace = metadata.getNamespace() != null ? metadata.getNamespace() : "default";
 
     // Check containers
-    if (pod.getSpec().getContainers() != null) {
-      for (V1Container container : pod.getSpec().getContainers()) {
+    List<V1Container> containers = pod.getSpec().getContainers();
+    if (containers != null) {
+      for (V1Container container : containers) {
         findings.addAll(analyzeContainer(container, resourceName, "Pod", namespace));
       }
     }
@@ -92,28 +133,25 @@ public class SecurityRulesEngine {
   public List<SecurityFinding> analyzeService(V1Service service) {
     List<SecurityFinding> findings = new ArrayList<>();
 
-    if (service.getSpec() == null) {
+    if (service == null || service.getMetadata() == null || service.getSpec() == null) {
       return findings;
     }
 
-    String resourceName = service.getMetadata().getName();
-    String namespace = service.getMetadata().getNamespace();
+    V1ObjectMeta metadata = service.getMetadata();
+    V1ServiceSpec spec = service.getSpec();
+    String resourceName = metadata.getName() != null ? metadata.getName() : "unknown";
+    String namespace = metadata.getNamespace() != null ? metadata.getNamespace() : "default";
+    String serviceType = spec.getType();
 
     // Check for insecure service types
-    if ("LoadBalancer".equals(service.getSpec().getType())) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType("Service");
-      finding.setNamespace(namespace);
-      finding.setRuleId("SVC001");
-      finding.setTitle("LoadBalancer Service Detected");
-      finding.setDescription(
-          "LoadBalancer services expose applications to the internet. Ensure this is intentional.");
-      finding.setSeverity(Severity.MEDIUM);
-      finding.setCategory("Network Security");
-      finding.setRemediation(
-          "Consider using ClusterIP or NodePort if external access is not required.");
-      findings.add(finding);
+    if ("LoadBalancer".equals(serviceType)) {
+      findings.add(createFinding(
+          resourceName, "Service", namespace,
+          "SVC001", "LoadBalancer Service Detected",
+          "LoadBalancer services expose applications to the internet. Ensure this is intentional.",
+          Severity.MEDIUM, "Network Security",
+          "Consider using ClusterIP or NodePort if external access is not required.",
+          null));
     }
 
     return findings;
@@ -125,131 +163,87 @@ public class SecurityRulesEngine {
     List<SecurityFinding> findings = new ArrayList<>();
     // NET001: Missing Network Policies
     if (networkPolicies == null || networkPolicies.isEmpty()) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName("*");
-      finding.setResourceType("NetworkPolicy");
-      finding.setNamespace(namespace);
-      finding.setRuleId("NET001");
-      finding.setTitle("Missing Network Policies");
-      finding.setDescription(
-          "No NetworkPolicy resources found in the namespace. Pods may be open to unrestricted network access.");
-      finding.setSeverity(Severity.MEDIUM);
-      finding.setCategory("Network Security");
-      finding.setRemediation(
-          "Define NetworkPolicy resources to restrict traffic between pods and from external sources.");
-      findings.add(finding);
+      findings.add(createFinding(
+          "*", "NetworkPolicy", namespace,
+          "NET001", "Missing Network Policies",
+          "No NetworkPolicy resources found in the namespace. Pods may be open to unrestricted network access.",
+          Severity.MEDIUM, "Network Security",
+          "Define NetworkPolicy resources to restrict traffic between pods and from external sources.",
+          null));
     }
     return findings;
   }
 
   public List<SecurityFinding> analyzeIngress(V1Ingress ingress) {
     List<SecurityFinding> findings = new ArrayList<>();
-    if (ingress == null || ingress.getSpec() == null) {
+    if (ingress == null || ingress.getMetadata() == null || ingress.getSpec() == null) {
       return findings;
     }
+    
+    V1ObjectMeta metadata = ingress.getMetadata();
+    V1IngressSpec spec = ingress.getSpec();
+    
     // NET002: Ingress Without TLS
-    List<V1IngressTLS> tls = ingress.getSpec().getTls();
+    List<V1IngressTLS> tls = spec.getTls();
     if (tls == null || tls.isEmpty()) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(ingress.getMetadata() != null ? ingress.getMetadata().getName() : "");
-      finding.setResourceType("Ingress");
-      finding.setNamespace(
-          ingress.getMetadata() != null ? ingress.getMetadata().getNamespace() : "");
-      finding.setRuleId("NET002");
-      finding.setTitle("Ingress Without TLS");
-      finding.setDescription(
-          "Ingress resource does not define TLS configuration. Traffic may be unencrypted.");
-      finding.setSeverity(Severity.HIGH);
-      finding.setCategory("Network Security");
-      finding.setRemediation("Add TLS configuration to your Ingress to secure traffic with HTTPS.");
-      findings.add(finding);
+      String resourceName = metadata.getName() != null ? metadata.getName() : "unknown";
+      String namespace = metadata.getNamespace() != null ? metadata.getNamespace() : "default";
+      findings.add(createFinding(
+          resourceName, "Ingress", namespace,
+          "NET002", "Ingress Without TLS",
+          "Ingress resource does not define TLS configuration. Traffic may be unencrypted.",
+          Severity.HIGH, "Network Security",
+          "Add TLS configuration to your Ingress to secure traffic with HTTPS.",
+          null));
     }
     return findings;
   }
 
   // --- RBAC Rules ---
   public List<SecurityFinding> analyzeRole(V1Role role) {
-    List<SecurityFinding> findings = new ArrayList<>();
-    if (role == null || role.getRules() == null) {
-      return findings;
+    if (role == null || role.getMetadata() == null || role.getRules() == null) {
+      return new ArrayList<>();
     }
-    // RBAC001: Overly Permissive Roles
-    for (V1PolicyRule rule : role.getRules()) {
-      if (rule.getVerbs() != null && rule.getVerbs().contains("*")) {
-        SecurityFinding finding = new SecurityFinding();
-        finding.setResourceName(role.getMetadata() != null ? role.getMetadata().getName() : "");
-        finding.setResourceType("Role");
-        finding.setNamespace(role.getMetadata() != null ? role.getMetadata().getNamespace() : "");
-        finding.setRuleId("RBAC001");
-        finding.setTitle("Overly Permissive Role");
-        finding.setDescription(
-            "Role grants wildcard ('*') permissions. This is overly permissive and a security risk.");
-        finding.setSeverity(Severity.HIGH);
-        finding.setCategory("RBAC");
-        finding.setRemediation(
-            "Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
-        findings.add(finding);
-        break;
-      }
-      if (rule.getResources() != null && rule.getResources().contains("*")) {
-        SecurityFinding finding = new SecurityFinding();
-        finding.setResourceName(role.getMetadata() != null ? role.getMetadata().getName() : "");
-        finding.setResourceType("Role");
-        finding.setNamespace(role.getMetadata() != null ? role.getMetadata().getNamespace() : "");
-        finding.setRuleId("RBAC001");
-        finding.setTitle("Overly Permissive Role");
-        finding.setDescription(
-            "Role grants wildcard ('*') resource access. This is overly permissive and a security risk.");
-        finding.setSeverity(Severity.HIGH);
-        finding.setCategory("RBAC");
-        finding.setRemediation(
-            "Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
-        findings.add(finding);
-        break;
-      }
-    }
-    return findings;
+    V1ObjectMeta metadata = role.getMetadata();
+    String resourceName = metadata.getName() != null ? metadata.getName() : "unknown";
+    String namespace = metadata.getNamespace() != null ? metadata.getNamespace() : "default";
+    return analyzeRbacRules(role.getRules(), resourceName, "Role", namespace);
   }
 
   public List<SecurityFinding> analyzeClusterRole(V1ClusterRole clusterRole) {
-    List<SecurityFinding> findings = new ArrayList<>();
-    if (clusterRole == null || clusterRole.getRules() == null) {
-      return findings;
+    if (clusterRole == null || clusterRole.getMetadata() == null || clusterRole.getRules() == null) {
+      return new ArrayList<>();
     }
-    // RBAC001: Overly Permissive ClusterRoles
-    for (V1PolicyRule rule : clusterRole.getRules()) {
-      if (rule.getVerbs() != null && rule.getVerbs().contains("*")) {
-        SecurityFinding finding = new SecurityFinding();
-        finding.setResourceName(
-            clusterRole.getMetadata() != null ? clusterRole.getMetadata().getName() : "");
-        finding.setResourceType("ClusterRole");
-        finding.setNamespace("");
-        finding.setRuleId("RBAC001");
-        finding.setTitle("Overly Permissive ClusterRole");
-        finding.setDescription(
-            "ClusterRole grants wildcard ('*') permissions. This is overly permissive and a security risk.");
-        finding.setSeverity(Severity.HIGH);
-        finding.setCategory("RBAC");
-        finding.setRemediation(
-            "Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
-        findings.add(finding);
+    V1ObjectMeta metadata = clusterRole.getMetadata();
+    String resourceName = metadata.getName() != null ? metadata.getName() : "unknown";
+    return analyzeRbacRules(clusterRole.getRules(), resourceName, "ClusterRole", "");
+  }
+
+  private List<SecurityFinding> analyzeRbacRules(
+      List<V1PolicyRule> rules, String resourceName, String resourceType, String namespace) {
+    List<SecurityFinding> findings = new ArrayList<>();
+    
+    for (V1PolicyRule rule : rules) {
+      List<String> verbs = rule.getVerbs();
+      if (verbs != null && verbs.contains("*")) {
+        findings.add(createFinding(
+            resourceName, resourceType, namespace,
+            "RBAC001", "Overly Permissive " + resourceType,
+            resourceType + " grants wildcard ('*') permissions. This is overly permissive and a security risk.",
+            Severity.HIGH, "RBAC",
+            "Restrict verbs and resources to the minimum required for operation. Avoid using '*'.",
+            null));
         break;
       }
-      if (rule.getResources() != null && rule.getResources().contains("*")) {
-        SecurityFinding finding = new SecurityFinding();
-        finding.setResourceName(
-            clusterRole.getMetadata() != null ? clusterRole.getMetadata().getName() : "");
-        finding.setResourceType("ClusterRole");
-        finding.setNamespace("");
-        finding.setRuleId("RBAC001");
-        finding.setTitle("Overly Permissive ClusterRole");
-        finding.setDescription(
-            "ClusterRole grants wildcard ('*') resource access. This is overly permissive and a security risk.");
-        finding.setSeverity(Severity.HIGH);
-        finding.setCategory("RBAC");
-        finding.setRemediation(
-            "Restrict verbs and resources to the minimum required for operation. Avoid using '*'.");
-        findings.add(finding);
+      List<String> resources = rule.getResources();
+      if (resources != null && resources.contains("*")) {
+        findings.add(createFinding(
+            resourceName, resourceType, namespace,
+            "RBAC001", "Overly Permissive " + resourceType,
+            resourceType + " grants wildcard ('*') resource access. This is overly permissive and a security risk.",
+            Severity.HIGH, "RBAC",
+            "Restrict verbs and resources to the minimum required for operation. Avoid using '*'.",
+            null));
         break;
       }
     }
@@ -263,19 +257,13 @@ public class SecurityRulesEngine {
     if (podSpec != null
         && (podSpec.getServiceAccountName() == null
             || "default".equals(podSpec.getServiceAccountName()))) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("RBAC002");
-      finding.setTitle("Use of Default Service Account");
-      finding.setDescription(
-          "Resource is using the default service account, which has broad permissions by default.");
-      finding.setSeverity(Severity.MEDIUM);
-      finding.setCategory("RBAC");
-      finding.setRemediation(
-          "Create and use a dedicated service account with least privilege for this workload.");
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "RBAC002", "Use of Default Service Account",
+          "Resource is using the default service account, which has broad permissions by default.",
+          Severity.MEDIUM, "RBAC",
+          "Create and use a dedicated service account with least privilege for this workload.",
+          null));
     }
     return findings;
   }
@@ -290,57 +278,61 @@ public class SecurityRulesEngine {
     }
 
     // SEC001: Check for environment variables that might contain secrets
-    if (podSpec.getContainers() != null) {
-      for (V1Container container : podSpec.getContainers()) {
-        if (container.getEnv() != null) {
-          for (V1EnvVar envVar : container.getEnv()) {
-            String envName = envVar.getName().toLowerCase();
-            if ((envName.contains("password")
-                    || envName.contains("secret")
-                    || envName.contains("token")
-                    || envName.contains("key")
-                    || envName.contains("api_key"))
-                && envVar.getValue() != null) {
-              SecurityFinding finding = new SecurityFinding();
-              finding.setResourceName(resourceName);
-              finding.setResourceType(resourceType);
-              finding.setNamespace(namespace);
-              finding.setRuleId("SEC001");
-              finding.setTitle("Hardcoded Secret in Environment Variable");
-              finding.setDescription(
-                  "Environment variable '"
-                      + envVar.getName()
-                      + "' appears to contain a hardcoded secret.");
-              finding.setSeverity(Severity.CRITICAL);
-              finding.setCategory("Secret Management");
-              finding.setRemediation(
-                  "Use Kubernetes Secrets with valueFrom.secretKeyRef instead of hardcoded values.");
-              finding.setLocation("Container: " + container.getName());
-              findings.add(finding);
-            }
-          }
-        }
+    List<V1Container> containers = podSpec.getContainers();
+    if (containers != null) {
+      for (V1Container container : containers) {
+        findings.addAll(checkHardcodedSecrets(container, resourceName, resourceType, namespace));
       }
     }
 
     // SEC002: Check for automountServiceAccountToken
     if (podSpec.getAutomountServiceAccountToken() == null
         || Boolean.TRUE.equals(podSpec.getAutomountServiceAccountToken())) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("SEC002");
-      finding.setTitle("Service Account Token Auto-Mount Enabled");
-      finding.setDescription(
-          "Pod automatically mounts service account token, which may not be necessary.");
-      finding.setSeverity(Severity.LOW);
-      finding.setCategory("Secret Management");
-      finding.setRemediation(
-          "Set automountServiceAccountToken: false if the pod doesn't need to access the Kubernetes API.");
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "SEC002", "Service Account Token Auto-Mount Enabled",
+          "Pod automatically mounts service account token, which may not be necessary.",
+          Severity.LOW, "Secret Management",
+          "Set automountServiceAccountToken: false if the pod doesn't need to access the Kubernetes API.",
+          null));
     }
 
+    return findings;
+  }
+
+  private List<SecurityFinding> checkHardcodedSecrets(
+      V1Container container, String resourceName, String resourceType, String namespace) {
+    List<SecurityFinding> findings = new ArrayList<>();
+    
+    if (container == null) {
+      return findings;
+    }
+
+    List<V1EnvVar> envVars = container.getEnv();
+    if (envVars == null) {
+      return findings;
+    }
+
+    for (V1EnvVar envVar : envVars) {
+      if (envVar == null || envVar.getName() == null) {
+        continue;
+      }
+      String envName = envVar.getName().toLowerCase();
+      if ((envName.contains("password")
+              || envName.contains("secret")
+              || envName.contains("token")
+              || envName.contains("key")
+              || envName.contains("api_key"))
+          && envVar.getValue() != null) {
+        findings.add(createFinding(
+            resourceName, resourceType, namespace,
+            "SEC001", "Hardcoded Secret in Environment Variable",
+            "Environment variable '" + envVar.getName() + "' appears to contain a hardcoded secret.",
+            Severity.CRITICAL, "Secret Management",
+            "Use Kubernetes Secrets with valueFrom.secretKeyRef instead of hardcoded values.",
+            "Container: " + container.getName()));
+      }
+    }
     return findings;
   }
 
@@ -349,30 +341,32 @@ public class SecurityRulesEngine {
       V1PodSpec podSpec, String resourceName, String resourceType, String namespace) {
     List<SecurityFinding> findings = new ArrayList<>();
 
-    if (podSpec == null || podSpec.getContainers() == null) {
+    if (podSpec == null) {
       return findings;
     }
 
-    for (V1Container container : podSpec.getContainers()) {
+    List<V1Container> containers = podSpec.getContainers();
+    if (containers == null) {
+      return findings;
+    }
+
+    for (V1Container container : containers) {
+      if (container == null) {
+        continue;
+      }
       V1ResourceRequirements resources = container.getResources();
 
       // RES001: Check for missing resource requests
       if (resources == null
           || resources.getRequests() == null
           || resources.getRequests().isEmpty()) {
-        SecurityFinding finding = new SecurityFinding();
-        finding.setResourceName(resourceName);
-        finding.setResourceType(resourceType);
-        finding.setNamespace(namespace);
-        finding.setRuleId("RES001");
-        finding.setTitle("Missing Resource Requests");
-        finding.setDescription("Container does not have resource requests defined.");
-        finding.setSeverity(Severity.MEDIUM);
-        finding.setCategory("Resource Management");
-        finding.setRemediation(
-            "Define CPU and memory requests for proper scheduling and resource allocation.");
-        finding.setLocation("Container: " + container.getName());
-        findings.add(finding);
+        findings.add(createFinding(
+            resourceName, resourceType, namespace,
+            "RES001", "Missing Resource Requests",
+            "Container does not have resource requests defined.",
+            Severity.MEDIUM, "Resource Management",
+            "Define CPU and memory requests for proper scheduling and resource allocation.",
+            "Container: " + container.getName()));
       }
     }
 
@@ -382,231 +376,162 @@ public class SecurityRulesEngine {
   private List<SecurityFinding> analyzeContainer(
       V1Container container, String resourceName, String resourceType, String namespace) {
     List<SecurityFinding> findings = new ArrayList<>();
-
-    // Rule: Check for privileged containers
+    
+    if (container == null || container.getName() == null) {
+      return findings;
+    }
+    
+    String containerLocation = "Container: " + container.getName();
     V1SecurityContext securityContext = container.getSecurityContext();
+    
+    // CON001: Check for privileged containers
     if (securityContext != null && Boolean.TRUE.equals(securityContext.getPrivileged())) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON001");
-      finding.setTitle("Privileged Container Detected");
-      finding.setDescription(
-          "Container is running in privileged mode, which grants access to all host devices.");
-      finding.setSeverity(Severity.CRITICAL);
-      finding.setCategory("Container Security");
-      finding.setRemediation(
-          "Remove privileged: true from container security context. Use specific capabilities instead.");
-      finding.setLocation("Container: " + container.getName());
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "CON001", "Privileged Container Detected",
+          "Container is running in privileged mode, which grants access to all host devices.",
+          Severity.CRITICAL, "Container Security",
+          "Remove privileged: true from container security context. Use specific capabilities instead.",
+          containerLocation));
     }
 
-    // Rule: Check for containers running as root
+    // CON002: Check for containers running as root
     if (securityContext != null
         && securityContext.getRunAsUser() != null
         && securityContext.getRunAsUser() == 0) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON002");
-      finding.setTitle("Container Running as Root");
-      finding.setDescription("Container is configured to run as root user (UID 0).");
-      finding.setSeverity(Severity.HIGH);
-      finding.setCategory("Container Security");
-      finding.setRemediation("Set runAsUser to a non-zero value or set runAsNonRoot: true.");
-      finding.setLocation("Container: " + container.getName());
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "CON002", "Container Running as Root",
+          "Container is configured to run as root user (UID 0).",
+          Severity.HIGH, "Container Security",
+          "Set runAsUser to a non-zero value or set runAsNonRoot: true.",
+          containerLocation));
     }
 
-    // Rule: Check for missing resource limits
+    // CON003: Check for missing resource limits
     V1ResourceRequirements resources = container.getResources();
     if (resources == null || resources.getLimits() == null || resources.getLimits().isEmpty()) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON003");
-      finding.setTitle("Missing Resource Limits");
-      finding.setDescription("Container does not have resource limits defined.");
-      finding.setSeverity(Severity.MEDIUM);
-      finding.setCategory("Resource Management");
-      finding.setRemediation("Define CPU and memory limits for the container.");
-      finding.setLocation("Container: " + container.getName());
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "CON003", "Missing Resource Limits",
+          "Container does not have resource limits defined.",
+          Severity.MEDIUM, "Resource Management",
+          "Define CPU and memory limits for the container.",
+          containerLocation));
     }
 
-    // Rule: Check for containers without readiness probe
+    // CON004: Check for containers without readiness probe
     if (container.getReadinessProbe() == null) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON004");
-      finding.setTitle("Missing Readiness Probe");
-      finding.setDescription("Container does not have a readiness probe configured.");
-      finding.setSeverity(Severity.LOW);
-      finding.setCategory("Reliability");
-      finding.setRemediation(
-          "Add a readiness probe to ensure traffic is only sent to ready containers.");
-      finding.setLocation("Container: " + container.getName());
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "CON004", "Missing Readiness Probe",
+          "Container does not have a readiness probe configured.",
+          Severity.LOW, "Reliability",
+          "Add a readiness probe to ensure traffic is only sent to ready containers.",
+          containerLocation));
     }
 
-    // Rule: Check for containers without liveness probe
+    // CON005: Check for containers without liveness probe
     if (container.getLivenessProbe() == null) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON005");
-      finding.setTitle("Missing Liveness Probe");
-      finding.setDescription("Container does not have a liveness probe configured.");
-      finding.setSeverity(Severity.LOW);
-      finding.setCategory("Reliability");
-      finding.setRemediation(
-          "Add a liveness probe to enable automatic restart of unhealthy containers.");
-      finding.setLocation("Container: " + container.getName());
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "CON005", "Missing Liveness Probe",
+          "Container does not have a liveness probe configured.",
+          Severity.LOW, "Reliability",
+          "Add a liveness probe to enable automatic restart of unhealthy containers.",
+          containerLocation));
     }
 
-    // Rule: Check for latest tag usage
+    // CON006: Check for latest tag usage
     String image = container.getImage();
     if (image != null && (image.endsWith(":latest") || !image.contains(":"))) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON006");
-      finding.setTitle("Using Latest Tag");
-      finding.setDescription("Container image uses 'latest' tag or no tag specified.");
-      finding.setSeverity(Severity.MEDIUM);
-      finding.setCategory("Container Security");
-      finding.setRemediation(
-          "Use specific version tags for container images to ensure reproducible deployments.");
-      finding.setLocation("Container: " + container.getName() + ", Image: " + image);
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "CON006", "Using Latest Tag",
+          "Container image uses 'latest' tag or no tag specified.",
+          Severity.MEDIUM, "Container Security",
+          "Use specific version tags for container images to ensure reproducible deployments.",
+          containerLocation + ", Image: " + image));
     }
 
-    // Rule: Check for containers with write access to root filesystem
+    // CON007: Check for containers with write access to root filesystem
     if (securityContext == null
         || !Boolean.TRUE.equals(securityContext.getReadOnlyRootFilesystem())) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON007");
-      finding.setTitle("Root Filesystem Not Read-Only");
-      finding.setDescription("Container does not have read-only root filesystem enabled.");
-      finding.setSeverity(Severity.MEDIUM);
-      finding.setCategory("Container Security");
-      finding.setRemediation("Set readOnlyRootFilesystem: true in container security context.");
-      finding.setLocation("Container: " + container.getName());
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "CON007", "Root Filesystem Not Read-Only",
+          "Container does not have read-only root filesystem enabled.",
+          Severity.MEDIUM, "Container Security",
+          "Set readOnlyRootFilesystem: true in container security context.",
+          containerLocation));
     }
 
-    // Rule: Check for containers without runAsNonRoot
+    // CON008: Check for containers without runAsNonRoot
     if (securityContext == null
         || !Boolean.TRUE.equals(securityContext.getRunAsNonRoot())) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON008");
-      finding.setTitle("RunAsNonRoot Not Enforced");
-      finding.setDescription("Container does not enforce running as non-root user.");
-      finding.setSeverity(Severity.HIGH);
-      finding.setCategory("Container Security");
-      finding.setRemediation("Set runAsNonRoot: true in container security context.");
-      finding.setLocation("Container: " + container.getName());
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "CON008", "RunAsNonRoot Not Enforced",
+          "Container does not enforce running as non-root user.",
+          Severity.HIGH, "Container Security",
+          "Set runAsNonRoot: true in container security context.",
+          containerLocation));
     }
 
-    // Rule: Check for containers with privilege escalation allowed
+    // CON009: Check for containers with privilege escalation allowed
     if (securityContext == null
         || !Boolean.FALSE.equals(securityContext.getAllowPrivilegeEscalation())) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON009");
-      finding.setTitle("Privilege Escalation Allowed");
-      finding.setDescription(
-          "Container allows privilege escalation, which could be exploited by attackers.");
-      finding.setSeverity(Severity.HIGH);
-      finding.setCategory("Container Security");
-      finding.setRemediation("Set allowPrivilegeEscalation: false in container security context.");
-      finding.setLocation("Container: " + container.getName());
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "CON009", "Privilege Escalation Allowed",
+          "Container allows privilege escalation, which could be exploited by attackers.",
+          Severity.HIGH, "Container Security",
+          "Set allowPrivilegeEscalation: false in container security context.",
+          containerLocation));
     }
 
-    // Rule: Check for containers with added capabilities
-    if (securityContext != null
-        && securityContext.getCapabilities() != null
-        && securityContext.getCapabilities().getAdd() != null
-        && !securityContext.getCapabilities().getAdd().isEmpty()) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON010");
-      finding.setTitle("Additional Capabilities Added");
-      finding.setDescription(
-          "Container has additional Linux capabilities added: "
-              + securityContext.getCapabilities().getAdd());
-      finding.setSeverity(Severity.MEDIUM);
-      finding.setCategory("Container Security");
-      finding.setRemediation(
-          "Remove unnecessary capabilities. Only add capabilities that are absolutely required.");
-      finding.setLocation("Container: " + container.getName());
-      findings.add(finding);
+    // CON010: Check for containers with added capabilities
+    if (securityContext != null && securityContext.getCapabilities() != null) {
+      List<String> addedCapabilities = securityContext.getCapabilities().getAdd();
+      if (addedCapabilities != null && !addedCapabilities.isEmpty()) {
+        findings.add(createFinding(
+            resourceName, resourceType, namespace,
+            "CON010", "Additional Capabilities Added",
+            "Container has additional Linux capabilities added: " + addedCapabilities,
+            Severity.MEDIUM, "Container Security",
+            "Remove unnecessary capabilities. Only add capabilities that are absolutely required.",
+            containerLocation));
+      }
     }
 
-    // Rule: Check for containers without dropped capabilities
-    if (securityContext == null
-        || securityContext.getCapabilities() == null
-        || securityContext.getCapabilities().getDrop() == null
-        || !securityContext.getCapabilities().getDrop().contains("ALL")) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON011");
-      finding.setTitle("Capabilities Not Dropped");
-      finding.setDescription("Container does not drop all capabilities by default.");
-      finding.setSeverity(Severity.MEDIUM);
-      finding.setCategory("Container Security");
-      finding.setRemediation(
-          "Drop all capabilities by default and only add back what is needed: capabilities.drop: [ALL]");
-      finding.setLocation("Container: " + container.getName());
-      findings.add(finding);
+    // CON011: Check for containers without dropped capabilities
+    boolean capabilitiesDropped = false;
+    if (securityContext != null && securityContext.getCapabilities() != null) {
+      List<String> droppedCapabilities = securityContext.getCapabilities().getDrop();
+      if (droppedCapabilities != null && droppedCapabilities.contains("ALL")) {
+        capabilitiesDropped = true;
+      }
+    }
+    
+    if (!capabilitiesDropped) {
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "CON011", "Capabilities Not Dropped",
+          "Container does not drop all capabilities by default.",
+          Severity.MEDIUM, "Container Security",
+          "Drop all capabilities by default and only add back what is needed: capabilities.drop: [ALL]",
+          containerLocation));
     }
 
-    // Rule: Check for containers with hostNetwork
-    // This is checked at pod level, but we note it here for completeness
-
-    // Rule: Check for containers with hostPID
-    // This is checked at pod level
-
-    // Rule: Check for containers with hostIPC
-    // This is checked at pod level
-
-    // Rule: Check for missing startup probe
+    // CON012: Check for missing startup probe
     if (container.getStartupProbe() == null) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("CON012");
-      finding.setTitle("Missing Startup Probe");
-      finding.setDescription("Container does not have a startup probe configured.");
-      finding.setSeverity(Severity.LOW);
-      finding.setCategory("Reliability");
-      finding.setRemediation(
-          "Add a startup probe for applications with slow startup times to prevent premature restarts.");
-      finding.setLocation("Container: " + container.getName());
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "CON012", "Missing Startup Probe",
+          "Container does not have a startup probe configured.",
+          Severity.LOW, "Reliability",
+          "Add a startup probe for applications with slow startup times to prevent premature restarts.",
+          containerLocation));
     }
 
     return findings;
@@ -620,49 +545,36 @@ public class SecurityRulesEngine {
     List<SecurityFinding> findings = new ArrayList<>();
 
     if (securityContext == null) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("POD001");
-      finding.setTitle("Missing Pod Security Context");
-      finding.setDescription("Pod does not have security context defined.");
-      finding.setSeverity(Severity.MEDIUM);
-      finding.setCategory("Pod Security");
-      finding.setRemediation(
-          "Define a security context for the pod with appropriate security settings.");
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "POD001", "Missing Pod Security Context",
+          "Pod does not have security context defined.",
+          Severity.MEDIUM, "Pod Security",
+          "Define a security context for the pod with appropriate security settings.",
+          null));
       return findings;
     }
 
-    // Rule: Check if pod is running as root
+    // POD002: Check if pod is running as root
     if (securityContext.getRunAsUser() != null && securityContext.getRunAsUser() == 0) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("POD002");
-      finding.setTitle("Pod Running as Root");
-      finding.setDescription("Pod is configured to run as root user.");
-      finding.setSeverity(Severity.HIGH);
-      finding.setCategory("Pod Security");
-      finding.setRemediation("Set runAsUser to a non-zero value in pod security context.");
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "POD002", "Pod Running as Root",
+          "Pod is configured to run as root user.",
+          Severity.HIGH, "Pod Security",
+          "Set runAsUser to a non-zero value in pod security context.",
+          null));
     }
 
-    // Rule: Check for missing fsGroup
+    // POD003: Check for missing fsGroup
     if (securityContext.getFsGroup() == null) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("POD003");
-      finding.setTitle("Missing FSGroup");
-      finding.setDescription("Pod does not have fsGroup specified in security context.");
-      finding.setSeverity(Severity.LOW);
-      finding.setCategory("Pod Security");
-      finding.setRemediation("Set fsGroup in pod security context for proper volume permissions.");
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "POD003", "Missing FSGroup",
+          "Pod does not have fsGroup specified in security context.",
+          Severity.LOW, "Pod Security",
+          "Set fsGroup in pod security context for proper volume permissions.",
+          null));
     }
 
     return findings;
@@ -679,67 +591,51 @@ public class SecurityRulesEngine {
 
     // POD004: Check for hostNetwork usage
     if (Boolean.TRUE.equals(podSpec.getHostNetwork())) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("POD004");
-      finding.setTitle("Host Network Enabled");
-      finding.setDescription("Pod is using the host network namespace.");
-      finding.setSeverity(Severity.HIGH);
-      finding.setCategory("Pod Security");
-      finding.setRemediation("Avoid using hostNetwork unless absolutely necessary.");
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "POD004", "Host Network Enabled",
+          "Pod is using the host network namespace.",
+          Severity.HIGH, "Pod Security",
+          "Avoid using hostNetwork unless absolutely necessary.",
+          null));
     }
 
     // POD005: Check for hostPID usage
     if (Boolean.TRUE.equals(podSpec.getHostPID())) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("POD005");
-      finding.setTitle("Host PID Namespace Enabled");
-      finding.setDescription("Pod is using the host PID namespace.");
-      finding.setSeverity(Severity.HIGH);
-      finding.setCategory("Pod Security");
-      finding.setRemediation("Avoid using hostPID unless absolutely necessary.");
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "POD005", "Host PID Namespace Enabled",
+          "Pod is using the host PID namespace.",
+          Severity.HIGH, "Pod Security",
+          "Avoid using hostPID unless absolutely necessary.",
+          null));
     }
 
     // POD006: Check for hostIPC usage
     if (Boolean.TRUE.equals(podSpec.getHostIPC())) {
-      SecurityFinding finding = new SecurityFinding();
-      finding.setResourceName(resourceName);
-      finding.setResourceType(resourceType);
-      finding.setNamespace(namespace);
-      finding.setRuleId("POD006");
-      finding.setTitle("Host IPC Namespace Enabled");
-      finding.setDescription("Pod is using the host IPC namespace.");
-      finding.setSeverity(Severity.HIGH);
-      finding.setCategory("Pod Security");
-      finding.setRemediation("Avoid using hostIPC unless absolutely necessary.");
-      findings.add(finding);
+      findings.add(createFinding(
+          resourceName, resourceType, namespace,
+          "POD006", "Host IPC Namespace Enabled",
+          "Pod is using the host IPC namespace.",
+          Severity.HIGH, "Pod Security",
+          "Avoid using hostIPC unless absolutely necessary.",
+          null));
     }
 
     // POD007: Check for hostPath volumes
-    if (podSpec.getVolumes() != null) {
-      for (V1Volume volume : podSpec.getVolumes()) {
-        if (volume.getHostPath() != null) {
-          SecurityFinding finding = new SecurityFinding();
-          finding.setResourceName(resourceName);
-          finding.setResourceType(resourceType);
-          finding.setNamespace(namespace);
-          finding.setRuleId("POD007");
-          finding.setTitle("HostPath Volume Detected");
-          finding.setDescription(
-              "Pod uses hostPath volume: " + volume.getHostPath().getPath());
-          finding.setSeverity(Severity.CRITICAL);
-          finding.setCategory("Pod Security");
-          finding.setRemediation(
-              "Avoid using hostPath volumes. Use PersistentVolumes or other volume types instead.");
-          finding.setLocation("Volume: " + volume.getName());
-          findings.add(finding);
+    List<V1Volume> volumes = podSpec.getVolumes();
+    if (volumes != null) {
+      for (V1Volume volume : volumes) {
+        if (volume != null && volume.getHostPath() != null) {
+          String volumePath = volume.getHostPath().getPath();
+          String volumeName = volume.getName();
+          findings.add(createFinding(
+              resourceName, resourceType, namespace,
+              "POD007", "HostPath Volume Detected",
+              "Pod uses hostPath volume: " + (volumePath != null ? volumePath : "unknown"),
+              Severity.CRITICAL, "Pod Security",
+              "Avoid using hostPath volumes. Use PersistentVolumes or other volume types instead.",
+              "Volume: " + (volumeName != null ? volumeName : "unknown")));
         }
       }
     }
