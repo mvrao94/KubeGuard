@@ -139,121 +139,48 @@ public class ScanService {
       // Scan Deployments
       V1DeploymentList deployments = appsV1Api.listNamespacedDeployment(namespace).execute();
       for (V1Deployment deployment : deployments.getItems()) {
-        List<SecurityFinding> findings = rulesEngine.analyzeDeployment(deployment);
-        for (SecurityFinding finding : findings) {
-          finding.setScanReport(report);
-          allFindings.add(finding);
-        }
+        addFindingsToReport(rulesEngine.analyzeDeployment(deployment), report, allFindings);
         totalResources++;
       }
 
       // Scan Pods
       V1PodList pods = coreV1Api.listNamespacedPod(namespace).execute();
       for (V1Pod pod : pods.getItems()) {
-        List<SecurityFinding> findings = rulesEngine.analyzePod(pod);
-        for (SecurityFinding finding : findings) {
-          finding.setScanReport(report);
-          allFindings.add(finding);
-        }
+        addFindingsToReport(rulesEngine.analyzePod(pod), report, allFindings);
         totalResources++;
       }
 
       // Scan Services
       V1ServiceList services = coreV1Api.listNamespacedService(namespace).execute();
       for (V1Service service : services.getItems()) {
-        List<SecurityFinding> findings = rulesEngine.analyzeService(service);
-        for (SecurityFinding finding : findings) {
-          finding.setScanReport(report);
-          allFindings.add(finding);
-        }
+        addFindingsToReport(rulesEngine.analyzeService(service), report, allFindings);
         totalResources++;
       }
 
       // Scan for service account usage in pods
       for (V1Pod pod : pods.getItems()) {
-        List<SecurityFinding> findings =
-            rulesEngine.analyzePodServiceAccount(
-                pod.getSpec(),
-                pod.getMetadata().getName(),
-                "Pod",
-                pod.getMetadata().getNamespace());
-        for (SecurityFinding finding : findings) {
-          finding.setScanReport(report);
-          allFindings.add(finding);
+        V1ObjectMeta podMetadata = pod.getMetadata();
+        V1PodSpec podSpec = pod.getSpec();
+        if (podSpec != null && podMetadata != null) {
+          String podName = podMetadata.getName() != null ? podMetadata.getName() : "unknown";
+          String podNamespace = podMetadata.getNamespace() != null ? podMetadata.getNamespace() : "default";
+          List<SecurityFinding> findings =
+              rulesEngine.analyzePodServiceAccount(podSpec, podName, "Pod", podNamespace);
+          addFindingsToReport(findings, report, allFindings);
         }
       }
 
       // Scan NetworkPolicies
-      if (networkingV1Api != null) {
-        try {
-          io.kubernetes.client.openapi.models.V1NetworkPolicyList networkPolicies =
-              networkingV1Api.listNamespacedNetworkPolicy(namespace).execute();
-          List<SecurityFinding> findings =
-              rulesEngine.analyzeNetworkPolicies(networkPolicies.getItems(), namespace);
-          for (SecurityFinding finding : findings) {
-            finding.setScanReport(report);
-            allFindings.add(finding);
-          }
-          totalResources += networkPolicies.getItems().size();
-        } catch (ApiException e) {
-          logger.warn("Failed to scan NetworkPolicies: {}", e.getMessage());
-        }
-      }
+      totalResources += scanNetworkPolicies(namespace, report, allFindings);
 
       // Scan Ingresses
-      if (networkingV1Api != null) {
-        try {
-          io.kubernetes.client.openapi.models.V1IngressList ingresses =
-              networkingV1Api.listNamespacedIngress(namespace).execute();
-          for (io.kubernetes.client.openapi.models.V1Ingress ingress : ingresses.getItems()) {
-            List<SecurityFinding> findings = rulesEngine.analyzeIngress(ingress);
-            for (SecurityFinding finding : findings) {
-              finding.setScanReport(report);
-              allFindings.add(finding);
-            }
-            totalResources++;
-          }
-        } catch (ApiException e) {
-          logger.warn("Failed to scan Ingresses: {}", e.getMessage());
-        }
-      }
+      totalResources += scanIngresses(namespace, report, allFindings);
 
       // Scan Roles
-      if (rbacV1Api != null) {
-        try {
-          io.kubernetes.client.openapi.models.V1RoleList roles =
-              rbacV1Api.listNamespacedRole(namespace).execute();
-          for (io.kubernetes.client.openapi.models.V1Role role : roles.getItems()) {
-            List<SecurityFinding> findings = rulesEngine.analyzeRole(role);
-            for (SecurityFinding finding : findings) {
-              finding.setScanReport(report);
-              allFindings.add(finding);
-            }
-            totalResources++;
-          }
-        } catch (ApiException e) {
-          logger.warn("Failed to scan Roles: {}", e.getMessage());
-        }
-      }
+      totalResources += scanRoles(namespace, report, allFindings);
 
       // Scan ClusterRoles (cluster-wide, but we'll associate with this scan)
-      if (rbacV1Api != null) {
-        try {
-          io.kubernetes.client.openapi.models.V1ClusterRoleList clusterRoles =
-              rbacV1Api.listClusterRole().execute();
-          for (io.kubernetes.client.openapi.models.V1ClusterRole clusterRole :
-              clusterRoles.getItems()) {
-            List<SecurityFinding> findings = rulesEngine.analyzeClusterRole(clusterRole);
-            for (SecurityFinding finding : findings) {
-              finding.setScanReport(report);
-              allFindings.add(finding);
-            }
-            totalResources++;
-          }
-        } catch (ApiException e) {
-          logger.warn("Failed to scan ClusterRoles: {}", e.getMessage());
-        }
-      }
+      totalResources += scanClusterRoles(report, allFindings);
 
       // Update report with findings
       updateReportWithFindings(report, allFindings, totalResources);
@@ -272,6 +199,110 @@ public class ScanService {
     scanReportRepository.save(report);
     logger.info("Completed cluster scan with scanId: {}", scanId);
     return CompletableFuture.completedFuture(report);
+  }
+
+  /**
+   * Helper method to add findings to report and allFindings list
+   */
+  private void addFindingsToReport(
+      List<SecurityFinding> findings, ScanReport report, List<SecurityFinding> allFindings) {
+    for (SecurityFinding finding : findings) {
+      finding.setScanReport(report);
+      allFindings.add(finding);
+    }
+  }
+
+  /**
+   * Scan NetworkPolicies in a namespace
+   */
+  private int scanNetworkPolicies(
+      String namespace, ScanReport report, List<SecurityFinding> allFindings) {
+    if (networkingV1Api == null) {
+      return 0;
+    }
+
+    try {
+      io.kubernetes.client.openapi.models.V1NetworkPolicyList networkPolicies =
+          networkingV1Api.listNamespacedNetworkPolicy(namespace).execute();
+      List<SecurityFinding> findings =
+          rulesEngine.analyzeNetworkPolicies(networkPolicies.getItems(), namespace);
+      addFindingsToReport(findings, report, allFindings);
+      return networkPolicies.getItems().size();
+    } catch (ApiException e) {
+      logger.warn("Failed to scan NetworkPolicies: {}", e.getMessage());
+      return 0;
+    }
+  }
+
+  /**
+   * Scan Ingresses in a namespace
+   */
+  private int scanIngresses(
+      String namespace, ScanReport report, List<SecurityFinding> allFindings) {
+    if (networkingV1Api == null) {
+      return 0;
+    }
+
+    try {
+      io.kubernetes.client.openapi.models.V1IngressList ingresses =
+          networkingV1Api.listNamespacedIngress(namespace).execute();
+      int count = 0;
+      for (io.kubernetes.client.openapi.models.V1Ingress ingress : ingresses.getItems()) {
+        addFindingsToReport(rulesEngine.analyzeIngress(ingress), report, allFindings);
+        count++;
+      }
+      return count;
+    } catch (ApiException e) {
+      logger.warn("Failed to scan Ingresses: {}", e.getMessage());
+      return 0;
+    }
+  }
+
+  /**
+   * Scan Roles in a namespace
+   */
+  private int scanRoles(String namespace, ScanReport report, List<SecurityFinding> allFindings) {
+    if (rbacV1Api == null) {
+      return 0;
+    }
+
+    try {
+      io.kubernetes.client.openapi.models.V1RoleList roles =
+          rbacV1Api.listNamespacedRole(namespace).execute();
+      int count = 0;
+      for (io.kubernetes.client.openapi.models.V1Role role : roles.getItems()) {
+        addFindingsToReport(rulesEngine.analyzeRole(role), report, allFindings);
+        count++;
+      }
+      return count;
+    } catch (ApiException e) {
+      logger.warn("Failed to scan Roles: {}", e.getMessage());
+      return 0;
+    }
+  }
+
+  /**
+   * Scan ClusterRoles (cluster-wide)
+   */
+  private int scanClusterRoles(ScanReport report, List<SecurityFinding> allFindings) {
+    if (rbacV1Api == null) {
+      return 0;
+    }
+
+    try {
+      io.kubernetes.client.openapi.models.V1ClusterRoleList clusterRoles =
+          rbacV1Api.listClusterRole().execute();
+      int count = 0;
+      for (io.kubernetes.client.openapi.models.V1ClusterRole clusterRole :
+          clusterRoles.getItems()) {
+        addFindingsToReport(rulesEngine.analyzeClusterRole(clusterRole), report, allFindings);
+        count++;
+      }
+      return count;
+    } catch (ApiException e) {
+      logger.warn("Failed to scan ClusterRoles: {}", e.getMessage());
+      return 0;
+    }
   }
 
   private List<SecurityFinding> scanYamlFile(File file, ScanReport report) {
@@ -312,6 +343,19 @@ public class ScanService {
     return findings;
   }
 
+  /**
+   * Helper method to add findings with report and location
+   */
+  private void addFindingsWithLocation(
+      List<SecurityFinding> findings, ScanReport report, String fileName, List<SecurityFinding> allFindings) {
+    findings.forEach(
+        finding -> {
+          finding.setScanReport(report);
+          finding.setLocation(fileName);
+        });
+    allFindings.addAll(findings);
+  }
+
   private List<SecurityFinding> analyzeYamlResource(
       Map<String, Object> resource, String fileName, ScanReport report) {
     List<SecurityFinding> findings = new ArrayList<>();
@@ -326,52 +370,28 @@ public class ScanService {
         case "Deployment":
           V1Deployment deployment = parseDeployment(resource);
           if (deployment != null) {
-            List<SecurityFinding> deploymentFindings = rulesEngine.analyzeDeployment(deployment);
-            deploymentFindings.forEach(
-                finding -> {
-                  finding.setScanReport(report);
-                  finding.setLocation(fileName);
-                });
-            findings.addAll(deploymentFindings);
+            addFindingsWithLocation(rulesEngine.analyzeDeployment(deployment), report, fileName, findings);
           }
           break;
 
         case "Pod":
           V1Pod pod = parsePod(resource);
           if (pod != null) {
-            List<SecurityFinding> podFindings = rulesEngine.analyzePod(pod);
-            podFindings.forEach(
-                finding -> {
-                  finding.setScanReport(report);
-                  finding.setLocation(fileName);
-                });
-            findings.addAll(podFindings);
+            addFindingsWithLocation(rulesEngine.analyzePod(pod), report, fileName, findings);
           }
           break;
 
         case "Service":
           V1Service service = parseService(resource);
           if (service != null) {
-            List<SecurityFinding> serviceFindings = rulesEngine.analyzeService(service);
-            serviceFindings.forEach(
-                finding -> {
-                  finding.setScanReport(report);
-                  finding.setLocation(fileName);
-                });
-            findings.addAll(serviceFindings);
+            addFindingsWithLocation(rulesEngine.analyzeService(service), report, fileName, findings);
           }
           break;
 
         case "Ingress":
           io.kubernetes.client.openapi.models.V1Ingress ingress = parseIngress(resource);
           if (ingress != null) {
-            List<SecurityFinding> ingressFindings = rulesEngine.analyzeIngress(ingress);
-            ingressFindings.forEach(
-                finding -> {
-                  finding.setScanReport(report);
-                  finding.setLocation(fileName);
-                });
-            findings.addAll(ingressFindings);
+            addFindingsWithLocation(rulesEngine.analyzeIngress(ingress), report, fileName, findings);
           }
           break;
 
@@ -387,13 +407,7 @@ public class ScanService {
         case "Role":
           io.kubernetes.client.openapi.models.V1Role role = parseRole(resource);
           if (role != null) {
-            List<SecurityFinding> roleFindings = rulesEngine.analyzeRole(role);
-            roleFindings.forEach(
-                finding -> {
-                  finding.setScanReport(report);
-                  finding.setLocation(fileName);
-                });
-            findings.addAll(roleFindings);
+            addFindingsWithLocation(rulesEngine.analyzeRole(role), report, fileName, findings);
           }
           break;
 
@@ -401,13 +415,7 @@ public class ScanService {
           io.kubernetes.client.openapi.models.V1ClusterRole clusterRole =
               parseClusterRole(resource);
           if (clusterRole != null) {
-            List<SecurityFinding> clusterRoleFindings = rulesEngine.analyzeClusterRole(clusterRole);
-            clusterRoleFindings.forEach(
-                finding -> {
-                  finding.setScanReport(report);
-                  finding.setLocation(fileName);
-                });
-            findings.addAll(clusterRoleFindings);
+            addFindingsWithLocation(rulesEngine.analyzeClusterRole(clusterRole), report, fileName, findings);
           }
           break;
 
@@ -421,20 +429,27 @@ public class ScanService {
     return findings;
   }
 
+  /**
+   * Helper method to parse metadata from resource map
+   */
+  private V1ObjectMeta parseMetadata(Map<String, Object> resource) {
+    @SuppressWarnings("unchecked")
+    Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
+    if (metadata == null) {
+      return null;
+    }
+
+    V1ObjectMeta objectMeta = new V1ObjectMeta();
+    objectMeta.setName((String) metadata.get("name"));
+    objectMeta.setNamespace((String) metadata.get("namespace"));
+    return objectMeta;
+  }
+
   private V1Deployment parseDeployment(Map<String, Object> resource) {
     // This is a simplified parser - in production, you'd use proper JSON/YAML to object mapping
     try {
       V1Deployment deployment = new V1Deployment();
-
-      // Parse metadata
-      @SuppressWarnings("unchecked")
-      Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
-      if (metadata != null) {
-        V1ObjectMeta objectMeta = new V1ObjectMeta();
-        objectMeta.setName((String) metadata.get("name"));
-        objectMeta.setNamespace((String) metadata.get("namespace"));
-        deployment.setMetadata(objectMeta);
-      }
+      deployment.setMetadata(parseMetadata(resource));
 
       // Parse spec - simplified version
       @SuppressWarnings("unchecked")
@@ -470,16 +485,7 @@ public class ScanService {
   private V1Pod parsePod(Map<String, Object> resource) {
     try {
       V1Pod pod = new V1Pod();
-
-      // Parse metadata
-      @SuppressWarnings("unchecked")
-      Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
-      if (metadata != null) {
-        V1ObjectMeta objectMeta = new V1ObjectMeta();
-        objectMeta.setName((String) metadata.get("name"));
-        objectMeta.setNamespace((String) metadata.get("namespace"));
-        pod.setMetadata(objectMeta);
-      }
+      pod.setMetadata(parseMetadata(resource));
 
       // Parse spec
       @SuppressWarnings("unchecked")
@@ -499,16 +505,7 @@ public class ScanService {
   private V1Service parseService(Map<String, Object> resource) {
     try {
       V1Service service = new V1Service();
-
-      // Parse metadata
-      @SuppressWarnings("unchecked")
-      Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
-      if (metadata != null) {
-        V1ObjectMeta objectMeta = new V1ObjectMeta();
-        objectMeta.setName((String) metadata.get("name"));
-        objectMeta.setNamespace((String) metadata.get("namespace"));
-        service.setMetadata(objectMeta);
-      }
+      service.setMetadata(parseMetadata(resource));
 
       // Parse spec
       @SuppressWarnings("unchecked")
@@ -668,16 +665,7 @@ public class ScanService {
     try {
       io.kubernetes.client.openapi.models.V1Ingress ingress =
           new io.kubernetes.client.openapi.models.V1Ingress();
-
-      // Parse metadata
-      @SuppressWarnings("unchecked")
-      Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
-      if (metadata != null) {
-        V1ObjectMeta objectMeta = new V1ObjectMeta();
-        objectMeta.setName((String) metadata.get("name"));
-        objectMeta.setNamespace((String) metadata.get("namespace"));
-        ingress.setMetadata(objectMeta);
-      }
+      ingress.setMetadata(parseMetadata(resource));
 
       // Parse spec
       @SuppressWarnings("unchecked")
@@ -718,17 +706,7 @@ public class ScanService {
     try {
       io.kubernetes.client.openapi.models.V1NetworkPolicy networkPolicy =
           new io.kubernetes.client.openapi.models.V1NetworkPolicy();
-
-      // Parse metadata
-      @SuppressWarnings("unchecked")
-      Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
-      if (metadata != null) {
-        V1ObjectMeta objectMeta = new V1ObjectMeta();
-        objectMeta.setName((String) metadata.get("name"));
-        objectMeta.setNamespace((String) metadata.get("namespace"));
-        networkPolicy.setMetadata(objectMeta);
-      }
-
+      networkPolicy.setMetadata(parseMetadata(resource));
       return networkPolicy;
     } catch (Exception e) {
       logger.error("Error parsing NetworkPolicy: ", e);
@@ -736,47 +714,45 @@ public class ScanService {
     }
   }
 
+  /**
+   * Helper method to parse policy rules from resource map
+   */
+  private List<io.kubernetes.client.openapi.models.V1PolicyRule> parsePolicyRules(
+      Map<String, Object> resource) {
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> rules = (List<Map<String, Object>>) resource.get("rules");
+    if (rules == null) {
+      return null;
+    }
+
+    List<io.kubernetes.client.openapi.models.V1PolicyRule> policyRules = new ArrayList<>();
+    for (Map<String, Object> ruleMap : rules) {
+      io.kubernetes.client.openapi.models.V1PolicyRule policyRule =
+          new io.kubernetes.client.openapi.models.V1PolicyRule();
+
+      @SuppressWarnings("unchecked")
+      List<String> verbs = (List<String>) ruleMap.get("verbs");
+      policyRule.setVerbs(verbs);
+
+      @SuppressWarnings("unchecked")
+      List<String> resources = (List<String>) ruleMap.get("resources");
+      policyRule.setResources(resources);
+
+      @SuppressWarnings("unchecked")
+      List<String> apiGroups = (List<String>) ruleMap.get("apiGroups");
+      policyRule.setApiGroups(apiGroups);
+
+      policyRules.add(policyRule);
+    }
+    return policyRules;
+  }
+
   private io.kubernetes.client.openapi.models.V1Role parseRole(Map<String, Object> resource) {
     try {
       io.kubernetes.client.openapi.models.V1Role role =
           new io.kubernetes.client.openapi.models.V1Role();
-
-      // Parse metadata
-      @SuppressWarnings("unchecked")
-      Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
-      if (metadata != null) {
-        V1ObjectMeta objectMeta = new V1ObjectMeta();
-        objectMeta.setName((String) metadata.get("name"));
-        objectMeta.setNamespace((String) metadata.get("namespace"));
-        role.setMetadata(objectMeta);
-      }
-
-      // Parse rules
-      @SuppressWarnings("unchecked")
-      List<Map<String, Object>> rules = (List<Map<String, Object>>) resource.get("rules");
-      if (rules != null) {
-        List<io.kubernetes.client.openapi.models.V1PolicyRule> policyRules = new ArrayList<>();
-        for (Map<String, Object> ruleMap : rules) {
-          io.kubernetes.client.openapi.models.V1PolicyRule policyRule =
-              new io.kubernetes.client.openapi.models.V1PolicyRule();
-
-          @SuppressWarnings("unchecked")
-          List<String> verbs = (List<String>) ruleMap.get("verbs");
-          policyRule.setVerbs(verbs);
-
-          @SuppressWarnings("unchecked")
-          List<String> resources = (List<String>) ruleMap.get("resources");
-          policyRule.setResources(resources);
-
-          @SuppressWarnings("unchecked")
-          List<String> apiGroups = (List<String>) ruleMap.get("apiGroups");
-          policyRule.setApiGroups(apiGroups);
-
-          policyRules.add(policyRule);
-        }
-        role.setRules(policyRules);
-      }
-
+      role.setMetadata(parseMetadata(resource));
+      role.setRules(parsePolicyRules(resource));
       return role;
     } catch (Exception e) {
       logger.error("Error parsing Role: ", e);
@@ -789,42 +765,8 @@ public class ScanService {
     try {
       io.kubernetes.client.openapi.models.V1ClusterRole clusterRole =
           new io.kubernetes.client.openapi.models.V1ClusterRole();
-
-      // Parse metadata
-      @SuppressWarnings("unchecked")
-      Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
-      if (metadata != null) {
-        V1ObjectMeta objectMeta = new V1ObjectMeta();
-        objectMeta.setName((String) metadata.get("name"));
-        clusterRole.setMetadata(objectMeta);
-      }
-
-      // Parse rules
-      @SuppressWarnings("unchecked")
-      List<Map<String, Object>> rules = (List<Map<String, Object>>) resource.get("rules");
-      if (rules != null) {
-        List<io.kubernetes.client.openapi.models.V1PolicyRule> policyRules = new ArrayList<>();
-        for (Map<String, Object> ruleMap : rules) {
-          io.kubernetes.client.openapi.models.V1PolicyRule policyRule =
-              new io.kubernetes.client.openapi.models.V1PolicyRule();
-
-          @SuppressWarnings("unchecked")
-          List<String> verbs = (List<String>) ruleMap.get("verbs");
-          policyRule.setVerbs(verbs);
-
-          @SuppressWarnings("unchecked")
-          List<String> resources = (List<String>) ruleMap.get("resources");
-          policyRule.setResources(resources);
-
-          @SuppressWarnings("unchecked")
-          List<String> apiGroups = (List<String>) ruleMap.get("apiGroups");
-          policyRule.setApiGroups(apiGroups);
-
-          policyRules.add(policyRule);
-        }
-        clusterRole.setRules(policyRules);
-      }
-
+      clusterRole.setMetadata(parseMetadata(resource));
+      clusterRole.setRules(parsePolicyRules(resource));
       return clusterRole;
     } catch (Exception e) {
       logger.error("Error parsing ClusterRole: ", e);
