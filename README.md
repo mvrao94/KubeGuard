@@ -110,7 +110,36 @@ docker pull mvrao94/kubeguard:latest
 
 # Run with default configuration
 docker run -d -p 8080:8080 mvrao94/kubeguard:latest
+
+# Run with custom settings
+docker run -d -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e TZ=America/New_York \
+  --memory=1g \
+  mvrao94/kubeguard:latest
+
+# Enable debug mode
+docker run -d -p 8080:8080 -p 5005:5005 \
+  -e ENABLE_DEBUG=true \
+  mvrao94/kubeguard:latest
 ```
+
+### Building from Source
+
+```bash
+# Local build (builds JAR inside Docker)
+./scripts/build-docker.sh                    # Linux/Mac
+scripts\build-docker.cmd                     # Windows
+
+# CI build (uses pre-built JAR - faster)
+mvn clean package
+./scripts/build-docker.sh --mode ci --tag 1.0.0
+
+# Multi-architecture build
+./scripts/build-docker.sh --mode ci --tag 1.0.0 --multi-arch --push
+```
+
+See [scripts/DOCKER_QUICK_START.md](scripts/DOCKER_QUICK_START.md) for detailed Docker documentation.
 
 ## 🔗 API Reference
 

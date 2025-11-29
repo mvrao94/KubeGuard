@@ -1,0 +1,56 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# IDE files
+.idea
+.vscode
+*.iml
+*.swp
+*.swo
+*~
+
+# Build artifacts
+# Note: When using SKIP_BUILD=true, copy JAR before building
+target/
+!target/*.jar
+!target/extracted/
+
+# Documentation
+*.md
+docs/
+LICENSE
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+SECURITY.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Kubernetes and deployment
+k8s/
+helm/
+monitoring/
+
+# Docker files
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Logs and temp files
+*.log
+logs/
+tmp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+src/test/
+**/test/
+**/*Test.java
+**/*Tests.java

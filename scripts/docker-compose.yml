@@ -5,18 +5,33 @@ services:
     build:
       context: ..
       dockerfile: scripts/Dockerfile
+      args:
+        SKIP_BUILD: "false"
+        APP_VERSION: "dev"
     ports:
       - "8080:8080"
+      - "5005:5005"  # Debug port
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - DB_PASSWORD=kubeguard123
+      - SERVER_PORT=8080
+      - ENABLE_DEBUG=false  # Set to true for remote debugging
+      - TZ=UTC
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - ../sample-manifests:/app/manifests:ro
+      - ../logs:/app/logs  # Persist logs
     networks:
       - kubeguard-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
 
   postgres:
     image: postgres:17-alpine

@@ -198,6 +198,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             SKIP_BUILD=true
+            APP_VERSION=${{ steps.version.outputs.version }}
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VCS_REF=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: mode=max
