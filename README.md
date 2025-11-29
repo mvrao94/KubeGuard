@@ -143,6 +143,12 @@ See [scripts/README.md](scripts/README.md) for detailed Docker documentation.
 
 ## 🔗 API Reference
 
+**Complete API Documentation**: See [docs/API.md](docs/API.md) for full reference
+
+**Interactive Documentation**: http://localhost:8080/swagger-ui.html
+
+**OpenAPI Spec**: http://localhost:8080/api-docs
+
 ### Authentication
 Currently, KubeGuard runs without authentication for demo purposes. In production, implement proper authentication and authorization.
 
@@ -476,7 +482,11 @@ Pre-configured Prometheus alerts:
 
 ### Documentation
 
-- 📖 [Full Observability Guide](docs/OBSERVABILITY.md)
+- 📖 [Documentation Home](docs/README.md)
+- 📖 [API Reference](docs/API.md)
+- 📖 [Observability Guide](docs/OBSERVABILITY.md)
+- 📖 [Security Rules](docs/SECURITY_RULES_REFERENCE.md)
+- 📖 [Project Structure](docs/PROJECT_STRUCTURE.md)
 - 🚀 [Quick Start Guide](docs/OBSERVABILITY_QUICKSTART.md)
 - 🔧 [Monitoring Setup](monitoring/README.md)
 

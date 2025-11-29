@@ -1,5 +1,6 @@
 package io.github.mvrao94.kubeguard.controller;
 
+import io.github.mvrao94.kubeguard.dto.PageResponse;
 import io.github.mvrao94.kubeguard.dto.SecurityMetrics;
 import io.github.mvrao94.kubeguard.model.ScanReport;
 import io.github.mvrao94.kubeguard.model.ScanStatus;
@@ -53,7 +54,7 @@ public class ReportController {
             content = @Content(mediaType = "application/json"))
       })
   @GetMapping
-  public ResponseEntity<Page<ScanReport>> getAllReports(
+  public ResponseEntity<PageResponse<ScanReport>> getAllReports(
       @Parameter(
               description = "Page number (0-based index). First page is 0.",
               example = "0",
@@ -91,7 +92,7 @@ public class ReportController {
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
     Page<ScanReport> reports = scanReportRepository.findAll(pageable);
 
-    return ResponseEntity.ok(reports);
+    return ResponseEntity.ok(PageResponse.of(reports));
   }
 
   @Operation(
@@ -132,7 +133,7 @@ public class ReportController {
             description = "Scan report not found with the provided ID")
       })
   @GetMapping("/{scanReportId}/findings")
-  public ResponseEntity<Page<SecurityFinding>> getFindings(
+  public ResponseEntity<PageResponse<SecurityFinding>> getFindings(
       @Parameter(
               description = "Database ID of the scan report (not the scanId UUID)",
               required = true,
@@ -157,7 +158,7 @@ public class ReportController {
     Pageable pageable = PageRequest.of(page, size);
     Page<SecurityFinding> findings = findingRepository.findByScanReportId(scanReportId, pageable);
 
-    return ResponseEntity.ok(findings);
+    return ResponseEntity.ok(PageResponse.of(findings));
   }
 
   @Operation(

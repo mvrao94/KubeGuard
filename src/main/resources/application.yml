@@ -100,13 +100,14 @@ management:
 # Logging Configuration
 logging:
   level:
-    com.kubeguard: INFO
+    io.github.mvrao94.kubeguard: INFO
     io.kubernetes: WARN
     org.springframework.security: WARN
+    org.springframework.data.web: WARN
     org.hibernate.SQL: WARN
     org.hibernate.type.descriptor.sql.BasicBinder: WARN
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   file:
     name: logs/kubeguard.log

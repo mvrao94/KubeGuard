@@ -1,0 +1,325 @@
+{
+  "info": {
+    "name": "KubeGuard API",
+    "description": "Complete API collection for KubeGuard - Kubernetes Security Scanner",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "0.0.4"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "scanId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reportId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Security Scanning",
+      "item": [
+        {
+          "name": "Scan Manifest Files",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('scanId', jsonData.scanId);",
+                  "    pm.test('Scan started successfully', function () {",
+                  "        pm.expect(jsonData.status).to.eql('RUNNING');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"path\": \"/path/to/kubernetes/manifests\",\n  \"description\": \"Production deployment scan\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scan/manifests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scan", "manifests"]
+            },
+            "description": "Initiates an asynchronous security scan of Kubernetes manifest files"
+          },
+          "response": []
+        },
+        {
+          "name": "Scan Cluster Namespace",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('scanId', jsonData.scanId);",
+                  "    pm.test('Cluster scan started', function () {",
+                  "        pm.expect(jsonData.status).to.eql('RUNNING');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scan/cluster/:namespace",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scan", "cluster", ":namespace"],
+              "variable": [
+                {
+                  "key": "namespace",
+                  "value": "production",
+                  "description": "Kubernetes namespace to scan"
+                }
+              ]
+            },
+            "description": "Scans live resources in a Kubernetes cluster namespace"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Scan Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('reportId', jsonData.id);",
+                  "    pm.test('Scan status retrieved', function () {",
+                  "        pm.expect(jsonData.status).to.be.oneOf(['RUNNING', 'COMPLETED', 'FAILED']);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scan/status/:scanId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scan", "status", ":scanId"],
+              "variable": [
+                {
+                  "key": "scanId",
+                  "value": "{{scanId}}",
+                  "description": "UUID of the scan"
+                }
+              ]
+            },
+            "description": "Retrieves the status and results of a security scan"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for initiating and monitoring security scans"
+    },
+    {
+      "name": "Reports & Analytics",
+      "item": [
+        {
+          "name": "Get All Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports?page=0&size=10&sortBy=timestamp&sortDir=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page number (0-based)"
+                },
+                {
+                  "key": "size",
+                  "value": "10",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "timestamp",
+                  "description": "Field to sort by"
+                },
+                {
+                  "key": "sortDir",
+                  "value": "desc",
+                  "description": "Sort direction (asc/desc)"
+                }
+              ]
+            },
+            "description": "Retrieves a paginated list of all scan reports"
+          },
+          "response": []
+        },
+        {
+          "name": "Get High Priority Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/high-priority",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "high-priority"]
+            },
+            "description": "Retrieves reports containing critical or high severity findings"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Report Findings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/:reportId/findings?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", ":reportId", "findings"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page number"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Items per page"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "reportId",
+                  "value": "{{reportId}}",
+                  "description": "Database ID of the scan report"
+                }
+              ]
+            },
+            "description": "Retrieves detailed security findings for a specific scan"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Top Failing Rules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/analytics/top-failing-rules",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "analytics", "top-failing-rules"]
+            },
+            "description": "Retrieves the most frequently violated security rules"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Security Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/analytics/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "analytics", "summary"]
+            },
+            "description": "Retrieves aggregated security metrics across all scans"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for retrieving reports and analytics"
+    },
+    {
+      "name": "Health & Monitoring",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health"]
+            },
+            "description": "Check application health status"
+          },
+          "response": []
+        },
+        {
+          "name": "Application Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "info"]
+            },
+            "description": "Get application information"
+          },
+          "response": []
+        },
+        {
+          "name": "Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "metrics"]
+            },
+            "description": "Get application metrics"
+          },
+          "response": []
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/prometheus",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "prometheus"]
+            },
+            "description": "Get Prometheus-formatted metrics"
+          },
+          "response": []
+        }
+      ],
+      "description": "Health check and monitoring endpoints"
+    }
+  ]
+}
