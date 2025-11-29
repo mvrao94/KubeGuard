@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: {{ include "kubeguard.name" . }}-postgres
     app.kubernetes.io/component: database
 spec:
-  replicas: {{ .Values.postgres.replicas }}
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "kubeguard.name" . }}-postgres
@@ -26,9 +26,9 @@ spec:
               name: postgres
           env:
             - name: POSTGRES_DB
-              value: {{ .Values.postgres.database }}
+              value: {{ .Values.postgres.database.name }}
             - name: POSTGRES_USER
-              value: {{ .Values.postgres.user }}
+              value: {{ .Values.postgres.database.user }}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -38,11 +38,11 @@ spec:
               value: /var/lib/postgresql/data/pgdata
           resources:
             requests:
-              memory: {{ .Values.postgres.resources.requests.memory }}
-              cpu: {{ .Values.postgres.resources.requests.cpu }}
+              memory: "256Mi"
+              cpu: "100m"
             limits:
-              memory: {{ .Values.postgres.resources.limits.memory }}
-              cpu: {{ .Values.postgres.resources.limits.cpu }}
+              memory: "512Mi"
+              cpu: "500m"
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
@@ -51,7 +51,7 @@ spec:
               command:
                 - pg_isready
                 - -U
-                - {{ .Values.postgres.user }}
+                - {{ .Values.postgres.database.user }}
             initialDelaySeconds: 10
             periodSeconds: 5
           livenessProbe:
@@ -59,7 +59,7 @@ spec:
               command:
                 - pg_isready
                 - -U
-                - {{ .Values.postgres.user }}
+                - {{ .Values.postgres.database.user }}
             initialDelaySeconds: 30
             periodSeconds: 10
       volumes:
@@ -101,4 +101,4 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: {{ .Values.postgres.storage }}
+      storage: {{ .Values.postgres.persistence.size }}
