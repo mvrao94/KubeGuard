@@ -146,6 +146,12 @@ springdoc:
 # Application Specific Configuration
 kubeguard:
   security:
+    # API Key Authentication (MANDATORY)
+    # Generate a secure key: openssl rand -hex 32
+    # Set via environment variable: KUBEGUARD_API_KEY
+    api-key: ${KUBEGUARD_API_KEY:}
+    require-api-key: true  # NEVER set to false in production
+    
     # Rules configuration
     rules:
       enabled: true

@@ -50,6 +50,18 @@ KubeGuard is a light-weight, comprehensive, self-hosted Kubernetes security scan
 
 ## 🚀 Quick Start
 
+### ⚠️ SECURITY FIRST: Generate API Key
+
+**KubeGuard REQUIRES authentication. The application will FAIL TO START without an API key.**
+
+```bash
+# Generate a secure API key (REQUIRED)
+export KUBEGUARD_API_KEY=$(openssl rand -hex 32)
+
+# Verify it's set
+echo $KUBEGUARD_API_KEY
+```
+
 ### Using Docker Compose (Recommended)
 
 ```bash
@@ -57,14 +69,14 @@ KubeGuard is a light-weight, comprehensive, self-hosted Kubernetes security scan
 git clone https://github.com/mvrao94/KubeGuard.git
 cd KubeGuard
 
+# Generate API key (REQUIRED)
+export KUBEGUARD_API_KEY=$(openssl rand -hex 32)
+
 # Start KubeGuard with all dependencies
 docker-compose -f scripts/docker-compose.yml up -d
 
-# Wait for services to be ready
-docker-compose -f scripts/docker-compose.yml logs -f kubeguard
-
-# Access the application
-open http://localhost:8080/swagger-ui.html
+# Access the application (with authentication)
+curl -H "X-API-Key: $KUBEGUARD_API_KEY" http://localhost:8080/actuator/health
 ```
 
 ### Using Kubernetes
@@ -490,8 +502,10 @@ Pre-configured Prometheus alerts:
 
 - 📖 [Documentation Home](docs/README.md)
 - 📖 [API Reference](docs/API.md)
+- 📖 [Security Configuration](docs/SECURITY_CONFIGURATION.md) - **REQUIRED!** Authentication Setup
+- 📖 [Performance Benchmarks](PERFORMANCE.md) - **NEW!** JVM vs Native Image
 - 📖 [Rule Engine Architecture](docs/RULE_ENGINE_ARCHITECTURE.md)
-- 📖 [Security Integrations](docs/SECURITY_INTEGRATIONS.md) - **NEW!** NIST NVD & MITRE ATT&CK
+- 📖 [Security Integrations](docs/SECURITY_INTEGRATIONS.md) - NIST NVD & MITRE ATT&CK
 - 📖 [Observability Guide](docs/OBSERVABILITY.md)
 - 📖 [Security Rules](docs/SECURITY_RULES_REFERENCE.md)
 - 📖 [Project Structure](docs/PROJECT_STRUCTURE.md)
