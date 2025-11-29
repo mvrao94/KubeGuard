@@ -1,33 +1,191 @@
-HELP.md
+#######################
+# Build Tools & Output
+#######################
+
+# Maven
 target/
 build-tools/.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Build artifacts
+*.jar
+*.war
+*.ear
+*.class
+!gradle/wrapper/gradle-wrapper.jar
+
+#######################
+# IDEs & Editors
+#######################
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Eclipse / STS
 .apt_generated
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
 .sts4-cache
+bin/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
+# VS Code
 .vscode/
+*.code-workspace
+
+#######################
+# Operating System
+#######################
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+#######################
+# Java & Spring Boot
+#######################
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+logs/
+*.log.*
+
+# Package files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Spring Boot
+HELP.md
+spring-boot-*.log
+
+# JVM crash logs
+hs_err_pid*
+replay_pid*
+
+#######################
+# Testing & Coverage
+#######################
+
+# Test reports
+/test-output/
+/test-results/
+
+# Coverage reports
+.jacoco/
+jacoco.exec
+*.coverage
+
+#######################
+# Security & Secrets
+#######################
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Secrets and credentials
+**/secrets/
+**/credentials/
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+
+# Application properties with secrets
+*-secret.properties
+*-secret.yml
+*-secret.yaml
+
+#######################
+# Temporary Files
+#######################
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+#######################
+# Docker & Kubernetes
+#######################
+
+# Docker
+.dockerignore.bak
+
+# Kubernetes
+*.kubeconfig
+
+#######################
+# Miscellaneous
+#######################
+
+# Node modules (if using frontend tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.h2.db
+
+# Generated documentation
+/docs/generated/
+/javadoc/
