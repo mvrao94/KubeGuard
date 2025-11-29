@@ -13,7 +13,7 @@ public class ScanRequest {
   @Schema(
       description = "File system path to the directory containing Kubernetes manifests",
       example = "/path/to/manifests",
-      required = true)
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private String path;
 
   @Schema(description = "Optional description for the scan")
