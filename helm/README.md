@@ -4,9 +4,9 @@ Helm chart for deploying KubeGuard, a Kubernetes security scanner that identifie
 
 ## Prerequisites
 
-- Kubernetes 1.24+
-- Helm 3.0+
-- PostgreSQL 15 (included in chart)
+- Kubernetes 1.34+
+- Helm 4.0+
+- PostgreSQL 17 (included in chart)
 
 ## Quick Start
 
