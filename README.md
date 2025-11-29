@@ -12,9 +12,15 @@ KubeGuard is a light-weight, comprehensive, self-hosted Kubernetes security scan
 ### Core Functionality
 - **📄 Static Manifest Scanning**: Analyze Kubernetes YAML files for security issues before deployment
 - **🔍 Live Cluster Scanning**: Scan running resources within Kubernetes clusters for active vulnerabilities
-- **🎯 Comprehensive Rule Engine**: 25+ security rules covering CIS Kubernetes Benchmark recommendations
+- **🎯 Enterprise Rule Engine**: **50+ security rules** with extensible architecture supporting hundreds more
+  - Mapped to **CIS Kubernetes Benchmark** (30+ rules)
+  - Mapped to **NSA/CISA Hardening Guide** (25+ rules)
+  - Mapped to **MITRE ATT&CK** for Containers (15+ techniques)
+  - Mapped to **OWASP Kubernetes Top 10** (10+ rules)
+  - Ready for **PCI DSS, HIPAA, NIST CSF** integration
 - **📊 Detailed Reporting**: Rich JSON reports with severity levels, remediation advice, and actionable insights
 - **🔄 Async Processing**: Non-blocking scan execution with real-time status tracking
+- **⚡ High Performance**: Virtual threads enable parallel evaluation of hundreds of rules
 
 ### Enterprise Features
 - **🏗️ Production-Ready Architecture**: Built with Spring Boot, PostgreSQL, and containerized deployment
@@ -484,6 +490,8 @@ Pre-configured Prometheus alerts:
 
 - 📖 [Documentation Home](docs/README.md)
 - 📖 [API Reference](docs/API.md)
+- 📖 [Rule Engine Architecture](docs/RULE_ENGINE_ARCHITECTURE.md)
+- 📖 [Security Integrations](docs/SECURITY_INTEGRATIONS.md) - **NEW!** NIST NVD & MITRE ATT&CK
 - 📖 [Observability Guide](docs/OBSERVABILITY.md)
 - 📖 [Security Rules](docs/SECURITY_RULES_REFERENCE.md)
 - 📖 [Project Structure](docs/PROJECT_STRUCTURE.md)

@@ -161,3 +161,16 @@ kubeguard:
     connection-timeout: 10s
     read-timeout: 30s
     retry-attempts: 3
+  
+  # NIST NVD Integration
+  nvd:
+    enabled: false  # Set to true and provide API key to enable
+    api-key: ${NVD_API_KEY:}  # Get free API key from https://nvd.nist.gov/developers/request-an-api-key
+    sync-enabled: false  # Enable automatic daily sync
+    sync-cron: "0 0 2 * * ?"  # Daily at 2 AM
+    results-per-page: 20
+  
+  # MITRE ATT&CK Integration
+  mitre:
+    enabled: true  # Enabled by default (no API key required)
+    auto-load: true  # Load techniques on startup

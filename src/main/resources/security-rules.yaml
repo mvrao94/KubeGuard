@@ -1,0 +1,474 @@
+# Comprehensive Security Rules Configuration
+# Mapped to CIS Kubernetes Benchmark, NSA/CISA Guidelines, MITRE ATT&CK, and OWASP K8s Top 10
+
+rules:
+  # ============================================================================
+  # SECURITY CONTEXT RULES (CIS 5.2.x)
+  # ============================================================================
+  
+  - id: KSV001
+    title: "Container must not run as root"
+    description: "Containers should run as non-root user to limit privilege escalation"
+    severity: HIGH
+    category: SECURITY_CONTEXT
+    remediation: "Set securityContext.runAsNonRoot to true and specify runAsUser"
+    cisBenchmarks: ["5.2.6"]
+    nsaCisaGuidelines: ["Non-root containers"]
+    mitreAttack: ["T1611"]
+    owaspK8s: ["K01"]
+    references:
+      - "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/"
+    
+  - id: KSV002
+    title: "Container must drop all capabilities"
+    description: "Containers should drop all Linux capabilities and add only required ones"
+    severity: HIGH
+    category: SECURITY_CONTEXT
+    remediation: "Set securityContext.capabilities.drop to ['ALL']"
+    cisBenchmarks: ["5.2.7", "5.2.8", "5.2.9"]
+    nsaCisaGuidelines: ["Least privilege"]
+    mitreAttack: ["T1611"]
+    
+  - id: KSV003
+    title: "Container must not allow privilege escalation"
+    description: "Prevent processes from gaining more privileges than parent"
+    severity: HIGH
+    category: SECURITY_CONTEXT
+    remediation: "Set securityContext.allowPrivilegeEscalation to false"
+    cisBenchmarks: ["5.2.5"]
+    nsaCisaGuidelines: ["Non-root containers"]
+    mitreAttack: ["T1548"]
+    
+  - id: KSV004
+    title: "Container must use read-only root filesystem"
+    description: "Immutable root filesystem prevents runtime modifications"
+    severity: MEDIUM
+    category: SECURITY_CONTEXT
+    remediation: "Set securityContext.readOnlyRootFilesystem to true"
+    cisBenchmarks: ["5.2.6"]
+    nsaCisaGuidelines: ["Immutable container filesystems"]
+    
+  - id: KSV005
+    title: "Container must not run in privileged mode"
+    description: "Privileged containers have access to all host devices"
+    severity: CRITICAL
+    category: SECURITY_CONTEXT
+    remediation: "Set securityContext.privileged to false"
+    cisBenchmarks: ["5.2.1"]
+    nsaCisaGuidelines: ["Non-root containers"]
+    mitreAttack: ["T1611"]
+    owaspK8s: ["K01"]
+    
+  # ============================================================================
+  # HOST NAMESPACE RULES (CIS 5.2.2-5.2.4)
+  # ============================================================================
+  
+  - id: KSV006
+    title: "Pod must not share host PID namespace"
+    description: "Sharing host PID namespace allows container to see host processes"
+    severity: HIGH
+    category: POD_SECURITY
+    remediation: "Set hostPID to false or remove the field"
+    cisBenchmarks: ["5.2.2"]
+    nsaCisaGuidelines: ["Pod Security Standards"]
+    mitreAttack: ["T1611"]
+    
+  - id: KSV007
+    title: "Pod must not share host IPC namespace"
+    description: "Sharing host IPC allows inter-process communication with host"
+    severity: HIGH
+    category: POD_SECURITY
+    remediation: "Set hostIPC to false or remove the field"
+    cisBenchmarks: ["5.2.3"]
+    nsaCisaGuidelines: ["Pod Security Standards"]
+    
+  - id: KSV008
+    title: "Pod must not share host network namespace"
+    description: "Sharing host network exposes pod to host network stack"
+    severity: HIGH
+    category: NETWORK_SECURITY
+    remediation: "Set hostNetwork to false or remove the field"
+    cisBenchmarks: ["5.2.4"]
+    nsaCisaGuidelines: ["Network separation and hardening"]
+    mitreAttack: ["T1599"]
+    
+  - id: KSV009
+    title: "Pod must not mount host path volumes"
+    description: "Host path volumes can expose sensitive host files"
+    severity: CRITICAL
+    category: POD_SECURITY
+    remediation: "Avoid using hostPath volumes, use PersistentVolumes instead"
+    cisBenchmarks: ["5.2.4"]
+    nsaCisaGuidelines: ["Pod Security Standards"]
+    mitreAttack: ["T1611"]
+    
+  # ============================================================================
+  # RESOURCE MANAGEMENT (CIS 5.2.x)
+  # ============================================================================
+  
+  - id: KSV010
+    title: "Container must have CPU limits"
+    description: "CPU limits prevent resource exhaustion attacks"
+    severity: MEDIUM
+    category: RESOURCE_LIMITS
+    remediation: "Set resources.limits.cpu"
+    cisBenchmarks: ["5.2.11"]
+    nsaCisaGuidelines: ["Resource policies"]
+    mitreAttack: ["T1496"]
+    
+  - id: KSV011
+    title: "Container must have memory limits"
+    description: "Memory limits prevent OOM attacks"
+    severity: MEDIUM
+    category: RESOURCE_LIMITS
+    remediation: "Set resources.limits.memory"
+    cisBenchmarks: ["5.2.12"]
+    nsaCisaGuidelines: ["Resource policies"]
+    mitreAttack: ["T1496"]
+    
+  - id: KSV012
+    title: "Container must have CPU requests"
+    description: "CPU requests ensure proper scheduling"
+    severity: LOW
+    category: RESOURCE_LIMITS
+    remediation: "Set resources.requests.cpu"
+    cisBenchmarks: ["5.2.11"]
+    
+  - id: KSV013
+    title: "Container must have memory requests"
+    description: "Memory requests ensure proper scheduling"
+    severity: LOW
+    category: RESOURCE_LIMITS
+    remediation: "Set resources.requests.memory"
+    cisBenchmarks: ["5.2.12"]
+    
+  # ============================================================================
+  # IMAGE SECURITY
+  # ============================================================================
+  
+  - id: KSV014
+    title: "Container image must not use latest tag"
+    description: "Latest tag is mutable and can lead to unexpected changes"
+    severity: MEDIUM
+    category: IMAGE_SECURITY
+    remediation: "Use specific version tags or SHA256 digests"
+    nsaCisaGuidelines: ["Scan container images"]
+    owaspK8s: ["K04"]
+    
+  - id: KSV015
+    title: "Container image must be from trusted registry"
+    description: "Images should come from approved registries only"
+    severity: HIGH
+    category: IMAGE_SECURITY
+    remediation: "Use images from trusted registries"
+    nsaCisaGuidelines: ["Scan container images"]
+    owaspK8s: ["K04"]
+    
+  - id: KSV016
+    title: "Container image pull policy should be Always"
+    description: "Always pull ensures latest security patches"
+    severity: LOW
+    category: IMAGE_SECURITY
+    remediation: "Set imagePullPolicy to Always"
+    
+  # ============================================================================
+  # SECRETS MANAGEMENT (CIS 5.4.x)
+  # ============================================================================
+  
+  - id: KSV017
+    title: "Secrets must not be exposed as environment variables"
+    description: "Environment variables can be logged and exposed"
+    severity: HIGH
+    category: SECRETS_MANAGEMENT
+    remediation: "Use volume mounts for secrets instead"
+    cisBenchmarks: ["5.4.1"]
+    nsaCisaGuidelines: ["Secrets management"]
+    mitreAttack: ["T1552"]
+    owaspK8s: ["K02"]
+    
+  - id: KSV018
+    title: "Service account token must not be auto-mounted"
+    description: "Auto-mounting service account tokens increases attack surface"
+    severity: MEDIUM
+    category: RBAC
+    remediation: "Set automountServiceAccountToken to false"
+    cisBenchmarks: ["5.1.6"]
+    nsaCisaGuidelines: ["Use RBAC"]
+    mitreAttack: ["T1078"]
+    
+  # ============================================================================
+  # NETWORK SECURITY
+  # ============================================================================
+  
+  - id: KSV019
+    title: "Service must not use NodePort"
+    description: "NodePort exposes services on all nodes"
+    severity: MEDIUM
+    category: NETWORK_SECURITY
+    remediation: "Use ClusterIP or LoadBalancer instead"
+    nsaCisaGuidelines: ["Network separation and hardening"]
+    
+  - id: KSV020
+    title: "Service must not use LoadBalancer without restrictions"
+    description: "LoadBalancer without source ranges is publicly accessible"
+    severity: HIGH
+    category: NETWORK_SECURITY
+    remediation: "Set loadBalancerSourceRanges to restrict access"
+    nsaCisaGuidelines: ["Network separation and hardening"]
+    
+  - id: KSV021
+    title: "Ingress must use TLS"
+    description: "Ingress should enforce HTTPS"
+    severity: HIGH
+    category: NETWORK_SECURITY
+    remediation: "Configure TLS in ingress spec"
+    nsaCisaGuidelines: ["Network separation and hardening"]
+    mitreAttack: ["T1040"]
+    
+  - id: KSV022
+    title: "NetworkPolicy must be defined"
+    description: "Network policies enforce network segmentation"
+    severity: MEDIUM
+    category: NETWORK_SECURITY
+    remediation: "Create NetworkPolicy resources"
+    cisBenchmarks: ["5.3.2"]
+    nsaCisaGuidelines: ["Network separation and hardening"]
+    owaspK8s: ["K03"]
+    
+  # ============================================================================
+  # RBAC (CIS 5.1.x)
+  # ============================================================================
+  
+  - id: KSV023
+    title: "ClusterRole must not grant wildcard permissions"
+    description: "Wildcard permissions violate least privilege"
+    severity: CRITICAL
+    category: RBAC
+    remediation: "Specify explicit permissions"
+    cisBenchmarks: ["5.1.1", "5.1.3"]
+    nsaCisaGuidelines: ["Use RBAC"]
+    mitreAttack: ["T1078"]
+    
+  - id: KSV024
+    title: "Role must not grant wildcard permissions"
+    description: "Wildcard permissions violate least privilege"
+    severity: HIGH
+    category: RBAC
+    remediation: "Specify explicit permissions"
+    cisBenchmarks: ["5.1.1"]
+    nsaCisaGuidelines: ["Use RBAC"]
+    
+  - id: KSV025
+    title: "ServiceAccount must not use default"
+    description: "Default service account has unnecessary permissions"
+    severity: MEDIUM
+    category: RBAC
+    remediation: "Create dedicated service accounts"
+    cisBenchmarks: ["5.1.5"]
+    nsaCisaGuidelines: ["Use RBAC"]
+    
+  # ============================================================================
+  # POD SECURITY STANDARDS
+  # ============================================================================
+  
+  - id: KSV026
+    title: "Pod must define security context"
+    description: "Security context enforces security policies"
+    severity: HIGH
+    category: POD_SECURITY
+    remediation: "Define securityContext at pod or container level"
+    nsaCisaGuidelines: ["Pod Security Standards"]
+    
+  - id: KSV027
+    title: "Pod must not use hostPort"
+    description: "hostPort bypasses network policies"
+    severity: HIGH
+    category: NETWORK_SECURITY
+    remediation: "Remove hostPort, use Service instead"
+    nsaCisaGuidelines: ["Pod Security Standards"]
+    
+  - id: KSV028
+    title: "Container must define liveness probe"
+    description: "Liveness probes ensure container health"
+    severity: LOW
+    category: CONFIGURATION
+    remediation: "Define livenessProbe"
+    
+  - id: KSV029
+    title: "Container must define readiness probe"
+    description: "Readiness probes prevent traffic to unhealthy pods"
+    severity: LOW
+    category: CONFIGURATION
+    remediation: "Define readinessProbe"
+    
+  - id: KSV030
+    title: "Pod must have PodDisruptionBudget"
+    description: "PDB ensures availability during disruptions"
+    severity: LOW
+    category: CONFIGURATION
+    remediation: "Create PodDisruptionBudget"
+    
+  # ============================================================================
+  # ADMISSION CONTROL (CIS 5.2.x)
+  # ============================================================================
+  
+  - id: KSV031
+    title: "Pod must comply with PodSecurityPolicy"
+    description: "PSP enforces security standards"
+    severity: HIGH
+    category: ADMISSION_CONTROL
+    remediation: "Ensure pod complies with PSP"
+    cisBenchmarks: ["5.2.1"]
+    nsaCisaGuidelines: ["Pod Security Standards"]
+    
+  - id: KSV032
+    title: "Deployment must have pod security context"
+    description: "Deployment-level security context"
+    severity: HIGH
+    category: POD_SECURITY
+    remediation: "Set securityContext in pod template"
+    
+  # ============================================================================
+  # ADDITIONAL CIS BENCHMARKS
+  # ============================================================================
+  
+  - id: KSV033
+    title: "Container must not mount Docker socket"
+    description: "Docker socket access allows container escape"
+    severity: CRITICAL
+    category: POD_SECURITY
+    remediation: "Remove /var/run/docker.sock volume mount"
+    cisBenchmarks: ["5.2.4"]
+    mitreAttack: ["T1611"]
+    
+  - id: KSV034
+    title: "Container must not use insecure capabilities"
+    description: "Dangerous capabilities like SYS_ADMIN should not be added"
+    severity: CRITICAL
+    category: SECURITY_CONTEXT
+    remediation: "Remove dangerous capabilities"
+    cisBenchmarks: ["5.2.7"]
+    mitreAttack: ["T1611"]
+    
+  - id: KSV035
+    title: "Pod must not use host aliases"
+    description: "Host aliases can be used for DNS spoofing"
+    severity: MEDIUM
+    category: NETWORK_SECURITY
+    remediation: "Remove hostAliases"
+    
+  - id: KSV036
+    title: "Container must have security context defined"
+    description: "Container-level security context is required"
+    severity: HIGH
+    category: SECURITY_CONTEXT
+    remediation: "Define securityContext for each container"
+    
+  - id: KSV037
+    title: "Pod must not use hostPath for sensitive paths"
+    description: "Mounting sensitive host paths is dangerous"
+    severity: CRITICAL
+    category: POD_SECURITY
+    remediation: "Avoid mounting /etc, /var/run, /proc, /sys"
+    cisBenchmarks: ["5.2.4"]
+    
+  - id: KSV038
+    title: "Container must not run with UID 0"
+    description: "Running as UID 0 is root user"
+    severity: HIGH
+    category: SECURITY_CONTEXT
+    remediation: "Set runAsUser to non-zero value"
+    cisBenchmarks: ["5.2.6"]
+    
+  - id: KSV039
+    title: "Pod must have AppArmor profile"
+    description: "AppArmor provides mandatory access control"
+    severity: MEDIUM
+    category: SECURITY_CONTEXT
+    remediation: "Set container.apparmor.security.beta.kubernetes.io annotation"
+    cisBenchmarks: ["5.2.10"]
+    
+  - id: KSV040
+    title: "Pod must have SELinux options"
+    description: "SELinux provides additional security layer"
+    severity: MEDIUM
+    category: SECURITY_CONTEXT
+    remediation: "Set seLinuxOptions in securityContext"
+    cisBenchmarks: ["5.2.10"]
+    
+  - id: KSV041
+    title: "Pod must have seccomp profile"
+    description: "Seccomp restricts system calls"
+    severity: MEDIUM
+    category: SECURITY_CONTEXT
+    remediation: "Set seccompProfile in securityContext"
+    cisBenchmarks: ["5.2.10"]
+    nsaCisaGuidelines: ["Pod Security Standards"]
+    
+  - id: KSV042
+    title: "Namespace must have resource quotas"
+    description: "Resource quotas prevent resource exhaustion"
+    severity: MEDIUM
+    category: RESOURCE_LIMITS
+    remediation: "Create ResourceQuota for namespace"
+    cisBenchmarks: ["5.2.11"]
+    
+  - id: KSV043
+    title: "Namespace must have LimitRange"
+    description: "LimitRange sets default resource limits"
+    severity: LOW
+    category: RESOURCE_LIMITS
+    remediation: "Create LimitRange for namespace"
+    cisBenchmarks: ["5.2.12"]
+    
+  - id: KSV044
+    title: "Service must not expose management ports"
+    description: "Management ports should not be publicly accessible"
+    severity: HIGH
+    category: NETWORK_SECURITY
+    remediation: "Restrict access to management ports"
+    
+  - id: KSV045
+    title: "ConfigMap must not contain sensitive data"
+    description: "ConfigMaps are not encrypted"
+    severity: HIGH
+    category: SECRETS_MANAGEMENT
+    remediation: "Use Secrets for sensitive data"
+    mitreAttack: ["T1552"]
+    
+  - id: KSV046
+    title: "Pod must not use deprecated APIs"
+    description: "Deprecated APIs may have security issues"
+    severity: MEDIUM
+    category: CONFIGURATION
+    remediation: "Update to current API versions"
+    
+  - id: KSV047
+    title: "Container must not use privileged ports"
+    description: "Ports below 1024 require root privileges"
+    severity: MEDIUM
+    category: SECURITY_CONTEXT
+    remediation: "Use ports above 1024"
+    
+  - id: KSV048
+    title: "Pod must have anti-affinity rules"
+    description: "Anti-affinity improves availability"
+    severity: LOW
+    category: CONFIGURATION
+    remediation: "Define podAntiAffinity"
+    
+  - id: KSV049
+    title: "Deployment must have update strategy"
+    description: "Update strategy ensures safe rollouts"
+    severity: LOW
+    category: CONFIGURATION
+    remediation: "Define strategy in deployment spec"
+    
+  - id: KSV050
+    title: "StatefulSet must have update strategy"
+    description: "Update strategy for stateful apps"
+    severity: LOW
+    category: CONFIGURATION
+    remediation: "Define updateStrategy"
+
+# Total: 50 comprehensive rules mapped to industry standards
