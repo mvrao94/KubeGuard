@@ -209,8 +209,6 @@ jobs:
           # Generate SBOM attestation (Software Bill of Materials)
           # This creates a complete list of all software components
           sbom: true
-          # Attach attestations to the image
-          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Kubernetes Security Scanner
       
       - name: Verify attestations
         run: |
