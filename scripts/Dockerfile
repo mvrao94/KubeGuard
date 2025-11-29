@@ -94,11 +94,14 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:${SERVER_PORT}/actuator/health/liveness || exit 1
 
 # OCI standard labels with build metadata
+ARG APP_VERSION
+ARG BUILD_DATE
+ARG VCS_REF
 LABEL org.opencontainers.image.title="KubeGuard" \
       org.opencontainers.image.description="Kubernetes Security Scanner and Policy Enforcement" \
-      org.opencontainers.image.version="${APP_VERSION}" \
-      org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.version="$APP_VERSION" \
+      org.opencontainers.image.created="$BUILD_DATE" \
+      org.opencontainers.image.revision="$VCS_REF" \
       org.opencontainers.image.vendor="KubeGuard Team" \
       org.opencontainers.image.source="https://github.com/mvrao94/KubeGuard" \
       org.opencontainers.image.documentation="https://github.com/mvrao94/KubeGuard/blob/main/README.md" \
