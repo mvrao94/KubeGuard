@@ -38,13 +38,24 @@
 
   <properties>
     <java.version>25</java.version>
-    <client-java.version>24.0.0</client-java.version>
+    <kubernetes-client.version>24.0.0</kubernetes-client.version>
     <commons-io.version>2.21.0</commons-io.version>
-    <jjwt.version>0.12.6</jjwt.version>
-    <mockito.version>5.20.0</mockito.version>
-    <springdoc.version>3.0.0-RC1</springdoc.version>
+    <mockito-core.version>5.20.0</mockito-core.version>
+    <springdoc-openapi.version>2.7.0</springdoc-openapi.version>
     <testcontainers.version>1.21.3</testcontainers.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainers.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -78,7 +89,7 @@
     <dependency>
       <groupId>io.kubernetes</groupId>
       <artifactId>client-java</artifactId>
-      <version>${client-java.version}</version>
+      <version>${kubernetes-client.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -106,14 +117,9 @@
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.jsonwebtoken</groupId>
-      <artifactId>jjwt-api</artifactId>
-      <version>${jjwt.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-      <version>${springdoc.version}</version>
+      <version>${springdoc-openapi.version}</version>
     </dependency>
     <dependency>
       <groupId>com.h2database</groupId>
@@ -138,18 +144,12 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>postgresql</artifactId>
-      <version>${testcontainers.version}</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-reflect</artifactId>
     </dependency>
   </dependencies>
 
@@ -158,14 +158,6 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-            </exclude>
-          </excludes>
-        </configuration>
       </plugin>
 
       <plugin>
@@ -177,7 +169,7 @@
             <include>**/*Test.java</include>
             <include>**/*Tests.java</include>
           </includes>
-          <argLine>@{argLine} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
+          <argLine>@{argLine} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito-core.version}/mockito-core-${mockito-core.version}.jar</argLine>
         </configuration>
       </plugin>
 
