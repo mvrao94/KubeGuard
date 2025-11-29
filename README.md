@@ -139,7 +139,7 @@ mvn clean package
 ./scripts/build-docker.sh --mode ci --tag 1.0.0 --multi-arch --push
 ```
 
-See [scripts/DOCKER_QUICK_START.md](scripts/DOCKER_QUICK_START.md) for detailed Docker documentation.
+See [scripts/README.md](scripts/README.md) for detailed Docker documentation.
 
 ## 🔗 API Reference
 

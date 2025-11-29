@@ -289,13 +289,12 @@ docker inspect kubeguard:ci-test | grep -A 20 Labels
 ## 10. Documentation Tests
 
 ### Test 10.1: Verify Documentation Files
-- [ ] `scripts/DOCKER_QUICK_START.md` exists and is readable
-- [ ] `scripts/README_DOCKER.md` exists and is readable
-- [ ] `DOCKER_OPTIMIZATION_CHANGES.md` exists and is readable
+- [ ] `scripts/README.md` exists and is readable
+- [ ] `scripts/DOCKER_COMMANDS.md` exists and is readable
 - [ ] `README.md` has updated Docker section
 
 ### Test 10.2: Follow Quick Start Guide
-- [ ] Follow steps in DOCKER_QUICK_START.md
+- [ ] Follow steps in scripts/README.md
 - [ ] All commands work as documented
 - [ ] Examples are accurate
 
