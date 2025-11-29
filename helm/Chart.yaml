@@ -3,4 +3,4 @@ name: kubeguard
 description: A Helm chart for deploying the KubeGuard security scanner
 type: application
 version: 1.0.0
-appVersion: "1.0.0"
+appVersion: "0.0.4"
