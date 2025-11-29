@@ -57,11 +57,10 @@ public class OpenApiConfig {
                         + "Currently, all endpoints are open for demonstration purposes. "
                         + "In production, implement proper authentication and authorization.")
                 .version(version)
-                .termsOfService("https://github.com/mvrao94/KubeGuard/blob/main/CODE_OF_CONDUCT.md")
                 .contact(
                     new Contact()
                         .name("KubeGuard Team")
-                        .url("https://github.com/mvrao94/KubeGuard")
+                        .url("https://mvrao94.github.io/KubeGuard")
                         .email("venkateswararaom07@gmail.com"))
                 .license(
                     new License()
