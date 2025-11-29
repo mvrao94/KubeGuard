@@ -12,10 +12,10 @@
 *~
 
 # Build artifacts
-# Note: When using SKIP_BUILD=true, copy JAR before building
-target/
+# Note: When using SKIP_BUILD=true, ensure JAR is in target/ before building
+# The Dockerfile will copy target/ directory, so we allow it here
+# target/
 !target/*.jar
-!target/extracted/
 
 # Documentation
 *.md

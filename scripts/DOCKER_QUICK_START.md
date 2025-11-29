@@ -47,6 +47,7 @@ scripts\build-docker.cmd --mode ci --tag 1.0.0 --multi-arch --push
 - No Maven/Java required on host
 - Slower but self-contained
 - Uses BuildKit cache for dependencies
+- Target directory can be empty or non-existent
 
 ```bash
 ./scripts/build-docker.sh --mode local
@@ -55,11 +56,14 @@ scripts\build-docker.cmd --mode ci --tag 1.0.0 --multi-arch --push
 ### CI Mode
 - Uses pre-built JAR from target/
 - Much faster (skips Maven build)
-- Requires JAR to exist
+- **Important**: JAR must exist in target/ before building
 - Used in GitHub Actions
 
 ```bash
+# Build JAR first
 mvn clean package
+
+# Then build Docker image
 ./scripts/build-docker.sh --mode ci
 ```
 

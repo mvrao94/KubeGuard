@@ -216,19 +216,29 @@ docker run -p 8080:8080 -p 5005:5005 \
 2. Set environment variables as needed
 3. No breaking changes
 
+## Important Fix Applied
+
+**Issue:** Initial version had shell syntax in COPY commands which caused build failures.
+
+**Fix:** Simplified to always copy target/ directory. Works for both local and CI modes.
+
+See `DOCKERFILE_FIX_SUMMARY.md` for detailed explanation.
+
 ## Testing Checklist
 
-- [x] Local build works (from source)
-- [x] CI build works (pre-built JAR)
-- [x] Multi-arch build works
-- [x] Docker Compose starts successfully
-- [x] Debug mode activates correctly
-- [x] Health checks pass
-- [x] Environment variables work
-- [x] Build scripts work on Windows
-- [x] Build scripts work on Linux/Mac
-- [x] CI/CD pipeline passes
-- [x] Image metadata is correct
+- [ ] Local build works (from source) - **Requires Docker running**
+- [ ] CI build works (pre-built JAR) - **Requires Docker running**
+- [ ] Multi-arch build works - **Requires Docker running**
+- [ ] Docker Compose starts successfully - **Requires Docker running**
+- [ ] Debug mode activates correctly
+- [ ] Health checks pass
+- [ ] Environment variables work
+- [ ] Build scripts work on Windows
+- [ ] Build scripts work on Linux/Mac
+- [ ] CI/CD pipeline passes
+- [ ] Image metadata is correct
+- [x] Dockerfile syntax is valid
+- [x] No shell operators in COPY commands
 
 ## Next Steps
 

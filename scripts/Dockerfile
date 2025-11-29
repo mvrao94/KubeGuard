@@ -15,8 +15,9 @@ ARG SKIP_BUILD
 
 WORKDIR /app
 
-# Copy POM first for better layer caching
+# Copy POM and target directory (target will have JAR in CI mode)
 COPY pom.xml* ./
+COPY target target
 
 # Download dependencies with cache mount for faster rebuilds
 RUN --mount=type=cache,target=/root/.m2 \
@@ -24,17 +25,11 @@ RUN --mount=type=cache,target=/root/.m2 \
       mvn dependency:go-offline -B; \
     fi
 
-# Copy source and build
+# Copy source and build (only if not skipping)
 COPY src ./src
 RUN --mount=type=cache,target=/root/.m2 \
     if [ "$SKIP_BUILD" = "false" ]; then \
       mvn clean package -DskipTests -B; \
-    fi
-
-# Extract Spring Boot layers for optimal Docker caching
-RUN if [ "$SKIP_BUILD" = "false" ]; then \
-      mkdir -p target/extracted && \
-      java -Djarmode=layertools -jar target/kubeguard-*.jar extract --destination target/extracted; \
     fi
 
 # ============================================================================
@@ -62,21 +57,11 @@ RUN mkdir -p /app/logs /app/config /tmp && \
 
 WORKDIR /app
 
-# Copy application layers for better caching
-# Layer order: dependencies -> spring-boot-loader -> snapshot-dependencies -> application
+# Copy application JAR
+# In local mode: JAR is built in builder stage
+# In CI mode: JAR is copied from host target/ directory
 ARG SKIP_BUILD=false
-COPY --from=builder --chown=kubeguard:kubeguard \
-    /app/target/extracted/dependencies/ ./
-COPY --from=builder --chown=kubeguard:kubeguard \
-    /app/target/extracted/spring-boot-loader/ ./
-COPY --from=builder --chown=kubeguard:kubeguard \
-    /app/target/extracted/snapshot-dependencies/ ./
-COPY --from=builder --chown=kubeguard:kubeguard \
-    /app/target/extracted/application/ ./
-
-# For CI/CD: copy pre-built JAR if SKIP_BUILD=true
-# Usage: COPY target/kubeguard-*.jar /app/kubeguard.jar before building with SKIP_BUILD=true
-COPY --chown=kubeguard:kubeguard target/kubeguard-*.jar* ./kubeguard.jar* 2>/dev/null || true
+COPY --from=builder --chown=kubeguard:kubeguard /app/target/*.jar ./kubeguard.jar
 
 # Switch to non-root user
 USER kubeguard

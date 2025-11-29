@@ -88,8 +88,9 @@ if [ "$MODE" = "ci" ]; then
   echo -e "${YELLOW}Building in CI mode (using pre-built JAR)...${NC}"
   
   # Check if JAR exists
-  if [ ! -f target/kubeguard-*.jar ]; then
-    echo -e "${RED}Error: JAR file not found in target/. Build with Maven first.${NC}"
+  if ! ls target/kubeguard-*.jar 1> /dev/null 2>&1; then
+    echo -e "${RED}Error: JAR file not found in target/. Build with Maven first:${NC}"
+    echo -e "${YELLOW}  mvn clean package${NC}"
     exit 1
   fi
   
@@ -106,6 +107,9 @@ if [ "$MODE" = "ci" ]; then
     
 else
   echo -e "${YELLOW}Building in local mode (building from source)...${NC}"
+  
+  # Ensure target directory exists (can be empty)
+  mkdir -p target
   
   docker buildx build \
     --platform "$PLATFORM" \

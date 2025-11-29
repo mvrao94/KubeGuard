@@ -93,14 +93,20 @@ cd /d "%~dp0\.."
 if "%MODE%"=="ci" (
     echo Building in CI mode (using pre-built JAR)...
     
-    if not exist "target\kubeguard-*.jar" (
-        echo Error: JAR file not found in target\. Build with Maven first.
+    dir /b target\kubeguard-*.jar >nul 2>&1
+    if errorlevel 1 (
+        echo Error: JAR file not found in target\. Build with Maven first:
+        echo   mvn clean package
         exit /b 1
     )
     
     set BUILD_ARGS=--build-arg SKIP_BUILD=true
 ) else (
     echo Building in local mode (building from source)...
+    
+    REM Ensure target directory exists (can be empty)
+    if not exist "target" mkdir target
+    
     set BUILD_ARGS=--build-arg SKIP_BUILD=false
 )
 
