@@ -9,17 +9,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class ScanResponse {
 
   @Schema(
-      description = "Unique identifier for the scan",
-      example = "123e4567-e89b-12d3-a456-426614174000")
+      description = "Unique identifier for the scan (UUID format)",
+      example = "123e4567-e89b-12d3-a456-426614174000",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private String scanId;
 
-  @Schema(description = "Response message", example = "Scan started successfully")
+  @Schema(
+      description = "Response message describing the result",
+      example = "Scan started successfully",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private String message;
 
   @Schema(
       description = "Current status of the scan",
       example = "RUNNING",
-      allowableValues = {"RUNNING", "COMPLETED", "FAILED"})
+      allowableValues = {"RUNNING", "COMPLETED", "FAILED"},
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private String status;
 
   @Schema(description = "Error message if scan failed")

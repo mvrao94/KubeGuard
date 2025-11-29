@@ -11,12 +11,20 @@ public class ScanRequest {
   @NotBlank(message = "Path is required")
   @Size(max = 500, message = "Path must be less than 500 characters")
   @Schema(
-      description = "File system path to the directory containing Kubernetes manifests",
-      example = "/path/to/manifests",
-      requiredMode = Schema.RequiredMode.REQUIRED)
+      description =
+          "File system path to the directory containing Kubernetes YAML/YML manifest files. "
+              + "The path should be accessible by the KubeGuard service. "
+              + "All .yaml and .yml files in the directory will be scanned recursively.",
+      example = "/home/user/k8s-manifests",
+      requiredMode = Schema.RequiredMode.REQUIRED,
+      minLength = 1,
+      maxLength = 500)
   private String path;
 
-  @Schema(description = "Optional description for the scan")
+  @Schema(
+      description = "Optional human-readable description for the scan to help identify it later",
+      example = "Production deployment manifests - Q4 2025",
+      maxLength = 255)
   private String description;
 
   // Constructors

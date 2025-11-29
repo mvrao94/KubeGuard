@@ -125,9 +125,22 @@ springdoc:
     doc-expansion: none
     default-models-expand-depth: 1
     default-model-expand-depth: 1
-  show-actuator: true
+    filter: true
+    try-it-out-enabled: true
+    persist-authorization: true
+    display-operation-id: false
+    show-extensions: true
+    show-common-extensions: true
+    disable-swagger-default-url: true
+    use-root-path: false
+  show-actuator: false
   packages-to-scan: io.github.mvrao94.kubeguard
   paths-to-match: /api/**
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  writer-with-default-pretty-printer: true
+  override-with-generic-response: false
+  model-and-view-allowed: false
 
 # Application Specific Configuration
 kubeguard:

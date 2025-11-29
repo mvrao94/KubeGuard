@@ -2,6 +2,7 @@ package io.github.mvrao94.kubeguard.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,46 +12,87 @@ import java.util.List;
 
 @Entity
 @Table(name = "scan_reports")
+@Schema(description = "Complete security scan report with findings and statistics")
 public class ScanReport {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Schema(
+      description = "Unique database identifier for the scan report",
+      example = "1",
+      accessMode = Schema.AccessMode.READ_ONLY)
   private Long id;
 
   @NotBlank
   @Column(nullable = false)
+  @Schema(
+      description = "Unique scan identifier (UUID)",
+      example = "123e4567-e89b-12d3-a456-426614174000",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private String scanId;
 
   @Enumerated(EnumType.STRING)
   @NotNull
   @Column(nullable = false)
+  @Schema(
+      description = "Type of scan performed",
+      example = "MANIFEST",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private ScanType scanType;
 
   @Column(nullable = false)
-  private String target; // namespace or file path
+  @Schema(
+      description =
+          "Target of the scan (namespace for cluster scans, file path for manifest scans)",
+      example = "default",
+      requiredMode = Schema.RequiredMode.REQUIRED)
+  private String target;
 
   @Column(nullable = false)
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  @Schema(
+      description = "Timestamp when the scan was initiated",
+      example = "2025-11-30T14:30:00",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private LocalDateTime timestamp;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
+  @Schema(
+      description = "Current status of the scan",
+      example = "COMPLETED",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private ScanStatus status;
 
-  @Column private String errorMessage;
+  @Column
+  @Schema(
+      description = "Error message if the scan failed",
+      example = "Connection timeout to Kubernetes cluster")
+  private String errorMessage;
 
-  @Column private Integer totalResources;
+  @Column
+  @Schema(description = "Total number of Kubernetes resources scanned", example = "25")
+  private Integer totalResources;
 
-  @Column private Integer criticalIssues;
+  @Column
+  @Schema(description = "Number of critical severity issues found", example = "3")
+  private Integer criticalIssues;
 
-  @Column private Integer highIssues;
+  @Column
+  @Schema(description = "Number of high severity issues found", example = "8")
+  private Integer highIssues;
 
-  @Column private Integer mediumIssues;
+  @Column
+  @Schema(description = "Number of medium severity issues found", example = "15")
+  private Integer mediumIssues;
 
-  @Column private Integer lowIssues;
+  @Column
+  @Schema(description = "Number of low severity issues found", example = "22")
+  private Integer lowIssues;
 
   @OneToMany(mappedBy = "scanReport", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   @JsonManagedReference
+  @Schema(description = "List of security findings discovered during the scan")
   private List<SecurityFinding> findings = new ArrayList<>();
 
   // Constructors

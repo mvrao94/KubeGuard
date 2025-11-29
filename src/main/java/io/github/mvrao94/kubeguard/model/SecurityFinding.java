@@ -1,53 +1,98 @@
 package io.github.mvrao94.kubeguard.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "security_findings")
+@Schema(
+    description = "Individual security finding or vulnerability detected in a Kubernetes resource")
 public class SecurityFinding {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Schema(
+      description = "Unique database identifier for the finding",
+      example = "42",
+      accessMode = Schema.AccessMode.READ_ONLY)
   private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "scan_report_id", nullable = false)
+  @JsonBackReference
+  @Schema(description = "Reference to the parent scan report", hidden = true)
   private ScanReport scanReport;
 
   @NotBlank
   @Column(nullable = false)
+  @Schema(
+      description = "Name of the Kubernetes resource where the issue was found",
+      example = "nginx-deployment",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private String resourceName;
 
   @NotBlank
   @Column(nullable = false)
+  @Schema(
+      description = "Type of Kubernetes resource",
+      example = "Deployment",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private String resourceType;
 
-  @Column private String namespace;
+  @Column
+  @Schema(description = "Kubernetes namespace of the resource", example = "production")
+  private String namespace;
 
   @NotBlank
   @Column(nullable = false)
+  @Schema(
+      description = "Unique identifier of the security rule that was violated",
+      example = "KSV001",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private String ruleId;
 
   @NotBlank
   @Column(nullable = false)
+  @Schema(
+      description = "Short title describing the security issue",
+      example = "Container running as root",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private String title;
 
   @Column(columnDefinition = "TEXT")
+  @Schema(
+      description = "Detailed description of the security issue and its implications",
+      example =
+          "Container is running with root privileges, which poses a security risk if the container is compromised")
   private String description;
 
   @Enumerated(EnumType.STRING)
   @NotNull
   @Column(nullable = false)
+  @Schema(
+      description = "Severity level of the security finding",
+      example = "HIGH",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private Severity severity;
 
-  @Column private String category;
+  @Column
+  @Schema(description = "Category of the security issue", example = "Security Context")
+  private String category;
 
   @Column(columnDefinition = "TEXT")
+  @Schema(
+      description = "Recommended steps to remediate the security issue",
+      example = "Set securityContext.runAsNonRoot to true and specify a non-root user ID")
   private String remediation;
 
-  @Column private String location;
+  @Column
+  @Schema(
+      description = "Location in the manifest where the issue was found",
+      example = "spec.template.spec.containers[0].securityContext")
+  private String location;
 
   // Constructors
   public SecurityFinding() {}
