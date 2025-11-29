@@ -1,204 +1,86 @@
-# KubeGuard Documentation Guide
+# KubeGuard Documentation
 
-## 📁 Clean Documentation Structure
+## 📚 Documentation Index
 
-```
-KubeGuard/
-├── README.md                          # Main project overview
-├── CONTRIBUTING.md                    # How to contribute
-├── CODE_OF_CONDUCT.md                # Community guidelines
-├── SECURITY.md                        # Security policy
-├── DOCUMENTATION.md                   # This file
-│
-└── docs/
-    ├── README.md                      # Documentation index
-    ├── API.md                         # REST API reference
-    ├── RULE_ENGINE_ARCHITECTURE.md    # Rule engine design
-    ├── SECURITY_INTEGRATIONS.md       # NVD & MITRE integration
-    ├── OBSERVABILITY.md               # Monitoring & metrics
-    ├── SECURITY_RULES_REFERENCE.md    # Security rules catalog
-    ├── PROJECT_STRUCTURE.md           # Code organization
-    └── POSTMAN_COLLECTION.json        # API testing collection
-```
+### Getting Started
+- **[README.md](README.md)** - Project overview, quick start, installation
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - Community standards
+- **[SECURITY.md](SECURITY.md)** - Security policy and reporting
 
----
-
-## 📚 Documentation Files
-
-### Root Level (4 files)
-
-| File | Purpose | Audience |
-|------|---------|----------|
-| **README.md** | Project overview, quick start, features | Everyone |
-| **CONTRIBUTING.md** | Contribution guidelines | Contributors |
-| **CODE_OF_CONDUCT.md** | Community standards | Everyone |
-| **SECURITY.md** | Security policy, vulnerability reporting | Security researchers |
-
-### docs/ Directory (8 files)
-
-| File | Purpose | Audience |
-|------|---------|----------|
-| **README.md** | Documentation index and navigation | Everyone |
-| **API.md** | Complete REST API reference | Developers, DevOps |
-| **RULE_ENGINE_ARCHITECTURE.md** | Rule engine design and extensibility | Developers, Architects |
-| **SECURITY_INTEGRATIONS.md** | NIST NVD & MITRE ATT&CK integration | Security teams, Developers |
-| **OBSERVABILITY.md** | Monitoring, metrics, health checks | DevOps, SRE |
-| **SECURITY_RULES_REFERENCE.md** | Complete security rules catalog | Security teams |
-| **PROJECT_STRUCTURE.md** | Codebase organization | Contributors |
-| **POSTMAN_COLLECTION.json** | API testing collection | Developers, QA |
-
----
-
-## 🎯 Quick Navigation
-
-### I want to...
-
-#### Get Started
-→ [README.md](README.md)
-
-#### Use the API
-→ [docs/API.md](docs/API.md)  
-→ http://localhost:8080/swagger-ui.html
-
-#### Understand the Rule Engine
-→ [docs/RULE_ENGINE_ARCHITECTURE.md](docs/RULE_ENGINE_ARCHITECTURE.md)
-
-#### Integrate with Security Frameworks
-→ [docs/SECURITY_INTEGRATIONS.md](docs/SECURITY_INTEGRATIONS.md)
-
-#### Monitor the Application
-→ [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)
-
-#### Understand Security Rules
-→ [docs/SECURITY_RULES_REFERENCE.md](docs/SECURITY_RULES_REFERENCE.md)
-
-#### Contribute Code
-→ [CONTRIBUTING.md](CONTRIBUTING.md)  
-→ [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)
-
-#### Report Security Issue
-→ [SECURITY.md](SECURITY.md)
-
----
-
-## 📊 Documentation Statistics
-
-```
-Total Files: 12
-├── Root: 4 files
-└── docs/: 8 files
-
-Total Pages: ~100 pages
-Total Words: ~30,000 words
-Code Examples: 50+
-API Endpoints: 8 documented
-```
-
----
-
-## 🔗 External Links
-
-### Application
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **OpenAPI Spec**: http://localhost:8080/api-docs
-- **Health Check**: http://localhost:8080/actuator/health
-- **Metrics**: http://localhost:8080/actuator/prometheus
-
-### Repository
-- **GitHub**: https://github.com/mvrao94/KubeGuard
-- **Issues**: https://github.com/mvrao94/KubeGuard/issues
-- **Docker Hub**: https://hub.docker.com/r/mvrao94/kubeguard
-
-### Standards & References
-- **CIS Benchmarks**: https://www.cisecurity.org/benchmark/kubernetes
-- **NSA/CISA Guide**: https://media.defense.gov/2022/Aug/29/2003066362/-1/-1/0/CTR_KUBERNETES_HARDENING_GUIDANCE_1.2_20220829.PDF
-- **MITRE ATT&CK**: https://attack.mitre.org/matrices/enterprise/containers/
-- **NIST NVD**: https://nvd.nist.gov/
-- **OWASP K8s Top 10**: https://owasp.org/www-project-kubernetes-top-ten/
-
----
-
-## ✨ What's Documented
-
-### Features
-- ✅ 50+ security rules with compliance mappings
-- ✅ NIST NVD integration for CVE data
-- ✅ MITRE ATT&CK integration (20+ techniques)
-- ✅ Extensible rule engine architecture
-- ✅ REST API with 8 endpoints
-- ✅ Prometheus metrics and monitoring
-- ✅ CI/CD integration examples
-- ✅ Postman collection for testing
+### Essential Guides
+- **[Security Configuration](docs/SECURITY_CONFIGURATION.md)** - **REQUIRED** - Mandatory authentication setup
+- **[Native Image Build](docs/NATIVE_IMAGE_BUILD.md)** - GraalVM build guide (experimental, untested)
+- **[API Reference](docs/API.md)** - Complete REST API documentation
 
 ### Architecture
-- ✅ Rule engine design patterns
-- ✅ Integration architecture
-- ✅ Performance characteristics
-- ✅ Scalability analysis
-- ✅ Security considerations
+- **[Rule Engine Architecture](docs/RULE_ENGINE_ARCHITECTURE.md)** - Extensible rule system design
+- **[Security Integrations](docs/SECURITY_INTEGRATIONS.md)** - NIST NVD & MITRE ATT&CK integration
+- **[Security Rules Reference](docs/SECURITY_RULES_REFERENCE.md)** - Complete catalog of 70+ rules
+- **[Project Structure](docs/PROJECT_STRUCTURE.md)** - Codebase organization
 
 ### Operations
-- ✅ Installation and setup
-- ✅ Configuration options
-- ✅ Monitoring and observability
-- ✅ Troubleshooting guides
-- ✅ Best practices
+- **[Observability Guide](docs/OBSERVABILITY.md)** - Monitoring, metrics, and alerting
+- **[Performance Analysis](PERFORMANCE.md)** - Honest JVM vs Go comparison
+
+### Deployment
+- **[Kubernetes Manifests](k8s/)** - Production-ready K8s deployment files
+- **[Helm Charts](helm/)** - Helm deployment option
+- **[Docker Compose](scripts/docker-compose.yml)** - Local development setup
 
 ---
 
-## 📝 Documentation Standards
+## 🚀 Quick Links
 
-### File Naming
-- Use descriptive names
-- Use UPPERCASE for root-level docs
-- Use Title Case for docs/ directory
-- Keep names concise
+**First Time Users**:
+1. Read [README.md](README.md) for overview
+2. Follow [Security Configuration](docs/SECURITY_CONFIGURATION.md) to set up authentication
+3. Optionally try [Native Image Build](docs/NATIVE_IMAGE_BUILD.md) (experimental)
 
-### Content Structure
-- Start with clear purpose
-- Include table of contents for long docs
-- Use examples liberally
-- Keep language clear and concise
-- Link between related docs
+**Developers**:
+1. Review [Project Structure](docs/PROJECT_STRUCTURE.md)
+2. Understand [Rule Engine Architecture](docs/RULE_ENGINE_ARCHITECTURE.md)
+3. Check [API Reference](docs/API.md) for endpoints
 
-### Maintenance
-- Update when features change
-- Keep examples current
-- Review quarterly
-- Validate links
-- Update version numbers
+**Operators**:
+1. Set up [Observability](docs/OBSERVABILITY.md)
+2. Review [Performance Analysis](PERFORMANCE.md)
+3. Deploy using [Kubernetes Manifests](k8s/)
 
 ---
 
-## 🎉 Clean Structure Benefits
+## 📊 Project Stats
 
-### Before Cleanup
-- 15+ scattered documentation files
-- Redundant content
-- Confusing navigation
-- Multiple summaries
-
-### After Cleanup
-- 12 focused documentation files
-- Single source of truth
-- Clear navigation
-- No redundancy
+- **70+ Security Rules**: CIS, NSA/CISA, MITRE ATT&CK, OWASP
+- **14 REST API Endpoints**: Fully documented with Swagger
+- **2 External Integrations**: NIST NVD + MITRE ATT&CK
+- **Mandatory Authentication**: API key required, no bypass
+- **Native Image Support**: GraalVM profile configured (untested)
 
 ---
 
-## 📞 Support
+## 🎯 Key Features
 
-### Documentation Issues
-- Check [docs/README.md](docs/README.md) for navigation
-- Browse Swagger UI for API help
-- Search this guide for keywords
+**Security First**:
+- Mandatory API key authentication
+- Fail-fast validation (app won't start without key)
+- No bypass mechanism
 
-### Technical Support
-- **GitHub Issues**: https://github.com/mvrao94/KubeGuard/issues
-- **Email**: venkateswararaom07@gmail.com
+**Comprehensive Rules**:
+- 50+ base security rules
+- 20+ MITRE ATT&CK techniques
+- Mapped to 4 compliance frameworks
+
+**Performance**:
+- JVM mode: 166 MB container (measured)
+- Native Image: Profile configured (untested)
+
+**Production Ready**:
+- Prometheus metrics
+- Grafana dashboards
+- Health checks
+- Comprehensive documentation
 
 ---
 
-**Documentation Version**: 2.0.0  
-**Last Updated**: 2025-11-30  
-**Status**: ✅ Clean and Organized
+**Last Updated**: 2025-11-30

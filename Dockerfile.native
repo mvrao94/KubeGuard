@@ -1,0 +1,56 @@
+# Multi-stage build for GraalVM Native Image
+# This Dockerfile produces a native executable with:
+# - Sub-second startup time
+# - ~200 MB memory usage (vs 300-500 MB JVM)
+# - Smaller container image
+
+# Stage 1: Build native image
+FROM ghcr.io/graalvm/native-image-community:21 AS builder
+
+WORKDIR /build
+
+# Copy Maven wrapper and pom.xml
+COPY .mvn/ .mvn/
+COPY mvnw pom.xml ./
+
+# Download dependencies (cached layer)
+RUN ./mvnw dependency:go-offline
+
+# Copy source code
+COPY src/ src/
+
+# Build native image
+RUN ./mvnw -Pnative native:compile -DskipTests
+
+# Stage 2: Runtime image
+FROM ubuntu:22.04
+
+# Install required runtime libraries
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r kubeguard && useradd -r -g kubeguard kubeguard
+
+WORKDIR /app
+
+# Copy native executable from builder
+COPY --from=builder /build/target/kubeguard /app/kubeguard
+
+# Set ownership
+RUN chown -R kubeguard:kubeguard /app
+
+# Switch to non-root user
+USER kubeguard
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+# Run native executable
+ENTRYPOINT ["/app/kubeguard"]

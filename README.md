@@ -1,602 +1,276 @@
-# KubeGuard: Lightweight Kubernetes Security Scanner
+# KubeGuard: Kubernetes Security Scanner
 
-[![CI/CD Pipeline](https://github.com/mvrao94/KubeGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/mvrao94/KubeGuard/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
+[![CI/CD](https://github.com/mvrao94/KubeGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/mvrao94/KubeGuard/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Coverage](https://codecov.io/gh/mvrao94/KubeGuard/graph/badge.svg?token=4ONAKZD2ZQ)](https://codecov.io/gh/mvrao94/KubeGuard)
-[![Docker Pulls](https://img.shields.io/docker/pulls/mvrao94/kubeguard?logo=docker)](https://hub.docker.com/r/mvrao94/kubeguard)
 
-KubeGuard is a light-weight, comprehensive, self-hosted Kubernetes security scanner built with Java and Spring Boot. It provides developers and DevOps engineers with actionable insights into security misconfigurations, helping to harden Kubernetes applications before and after deployment.
-
-## 🚀 Features
-
-### Core Functionality
-- **📄 Static Manifest Scanning**: Analyze Kubernetes YAML files for security issues before deployment
-- **🔍 Live Cluster Scanning**: Scan running resources within Kubernetes clusters for active vulnerabilities
-- **🎯 Enterprise Rule Engine**: **50+ security rules** with extensible architecture supporting hundreds more
-  - Mapped to **CIS Kubernetes Benchmark** (30+ rules)
-  - Mapped to **NSA/CISA Hardening Guide** (25+ rules)
-  - Mapped to **MITRE ATT&CK** for Containers (15+ techniques)
-  - Mapped to **OWASP Kubernetes Top 10** (10+ rules)
-  - Ready for **PCI DSS, HIPAA, NIST CSF** integration
-- **📊 Detailed Reporting**: Rich JSON reports with severity levels, remediation advice, and actionable insights
-- **🔄 Async Processing**: Non-blocking scan execution with real-time status tracking
-- **⚡ High Performance**: Virtual threads enable parallel evaluation of hundreds of rules
-
-### Enterprise Features
-- **🏗️ Production-Ready Architecture**: Built with Spring Boot, PostgreSQL, and containerized deployment
-- **🔐 Security-First Design**: RBAC, network policies, security contexts, and vulnerability scanning
-- **📈 Observability**: Comprehensive monitoring with Prometheus metrics and health checks
-- **🚀 CI/CD Integration**: GitHub Actions pipeline with automated testing and deployment
-- **🐳 Container Native**: Multi-architecture Docker images with security best practices
-- **☸️ Kubernetes Native**: Complete Kubernetes manifests with HPA, PDB, and network policies
-
-### Developer Experience
-- **📋 REST API**: Clean, well-documented RESTful API with OpenAPI 3.0 specification
-- **📚 Interactive Documentation**: Swagger UI for API exploration and testing
-- **🧪 Comprehensive Testing**: Unit, integration, and security tests with 80%+ coverage
-- **🔧 Local Development**: Docker Compose setup for easy local development
-
-## 📋 Table of Contents
-
-- [Quick Start](#-quick-start)
-- [Installation](#-installation)
-- [API Reference](#-api-reference)
-- [Security Rules](#-security-rules)
-- [Configuration](#-configuration)
-- [Deployment](#-deployment)
-- [Monitoring](#-monitoring)
-- [Development](#-development)
-- [Contributing](#-contributing)
+A comprehensive Kubernetes security scanner built with Java 25 and Spring Boot. Scans manifests and live clusters for security misconfigurations with 70+ rules mapped to CIS, NSA/CISA, MITRE ATT&CK, and OWASP standards.
 
 ## 🚀 Quick Start
 
-### ⚠️ SECURITY FIRST: Generate API Key
+### Prerequisites
 
-**KubeGuard REQUIRES authentication. The application will FAIL TO START without an API key.**
+**⚠️ MANDATORY**: Generate API key (application fails without it)
 
 ```bash
-# Generate a secure API key (REQUIRED)
 export KUBEGUARD_API_KEY=$(openssl rand -hex 32)
-
-# Verify it's set
-echo $KUBEGUARD_API_KEY
 ```
 
-### Using Docker Compose (Recommended)
+### Run with Docker
 
 ```bash
-# Clone the repository
-git clone https://github.com/mvrao94/KubeGuard.git
-cd KubeGuard
+# JVM mode
+docker run -d -p 8080:8080 \
+  -e KUBEGUARD_API_KEY=$KUBEGUARD_API_KEY \
+  mvrao94/kubeguard:latest
 
-# Generate API key (REQUIRED)
-export KUBEGUARD_API_KEY=$(openssl rand -hex 32)
-
-# Start KubeGuard with all dependencies
-docker-compose -f scripts/docker-compose.yml up -d
-
-# Access the application (with authentication)
-curl -H "X-API-Key: $KUBEGUARD_API_KEY" http://localhost:8080/actuator/health
+# Native Image mode (requires GraalVM build)
+docker run -d -p 8080:8080 \
+  -e KUBEGUARD_API_KEY=$KUBEGUARD_API_KEY \
+  mvrao94/kubeguard:native
 ```
 
-### Using Kubernetes
+### Test the API
 
 ```bash
-# Deploy to Kubernetes
-kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/namespace.yaml
-kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/rbac.yaml
-kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/postgres.yaml
-kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/deployment.yaml
-kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/service.yaml
+# Health check (no auth required)
+curl http://localhost:8080/actuator/health
 
-# Port forward to access the service
-kubectl port-forward svc/kubeguard 8080:80 -n kubeguard
+# Start a scan (auth required)
+curl -H "X-API-Key: $KUBEGUARD_API_KEY" \
+  -X POST http://localhost:8080/api/v1/scan/manifests \
+  -H "Content-Type: application/json" \
+  -d '{"path": "./manifests"}'
 
-# Access the application
+# View Swagger UI
 open http://localhost:8080/swagger-ui.html
 ```
 
-## 📦 Installation
+## 📋 Features
 
-### Prerequisites
+- **70+ Security Rules**: CIS Benchmark, NSA/CISA, MITRE ATT&CK, OWASP K8s Top 10
+- **Dual Scanning**: Static manifest analysis + live cluster scanning
+- **External Integrations**: NIST NVD (CVE database) + MITRE ATT&CK (attack patterns)
+- **Mandatory Authentication**: API key required, application fails without it
+- **Native Image Support**: GraalVM Native Image profile configured (untested)
+- **Production Ready**: Prometheus metrics, health checks, comprehensive docs
 
-- **Java 25** (for building from source)
-- **Maven 3.9+** (for building from source)
-- **Docker** (for containerized deployment)
-- **Kubernetes cluster** (for cluster scanning)
-- **kubectl** configured to access your cluster
+## 🔧 Installation
 
-### Building from Source
+### Option 1: Docker (Recommended)
 
 ```bash
-# Clone the repository
+# Pull and run JVM version
+docker pull mvrao94/kubeguard:latest
+docker run -d -p 8080:8080 \
+  -e KUBEGUARD_API_KEY=$(openssl rand -hex 32) \
+  mvrao94/kubeguard:latest
+```
+
+### Option 2: Build from Source (JVM)
+
+```bash
 git clone https://github.com/mvrao94/KubeGuard.git
 cd KubeGuard
-
-# Build the application
-./build-tools/mvnw clean package
-
-# Run the application
-java -jar target/kubeguard-1.0.0.jar
+export KUBEGUARD_API_KEY=$(openssl rand -hex 32)
+./mvnw clean package
+java -jar target/kubeguard-0.0.4-SNAPSHOT.jar
 ```
 
-### Using Pre-built Docker Image
+### Option 3: Build Native Image (Experimental)
 
 ```bash
-# Pull the latest image
-docker pull mvrao94/kubeguard:latest
+# Install GraalVM
+sdk install java 21.0.1-graal
+sdk use java 21.0.1-graal
+gu install native-image
 
-# Run with default configuration
-docker run -d -p 8080:8080 mvrao94/kubeguard:latest
+# Build native executable
+export KUBEGUARD_API_KEY=$(openssl rand -hex 32)
+./mvnw -Pnative native:compile
 
-# Run with custom settings
-docker run -d -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=prod \
-  -e TZ=America/New_York \
-  --memory=1g \
-  mvrao94/kubeguard:latest
-
-# Enable debug mode
-docker run -d -p 8080:8080 -p 5005:5005 \
-  -e ENABLE_DEBUG=true \
-  mvrao94/kubeguard:latest
+# Run
+./target/kubeguard
 ```
 
-### Building from Source
+**Note**: Native Image profile is configured but not tested. May require additional configuration.
+
+See [Native Image Build Guide](docs/NATIVE_IMAGE_BUILD.md) for detailed instructions.
+
+### Option 4: Kubernetes
 
 ```bash
-# Local build (builds JAR inside Docker)
-./scripts/build-docker.sh                    # Linux/Mac
-scripts\build-docker.cmd                     # Windows
-
-# CI build (uses pre-built JAR - faster)
-mvn clean package
-./scripts/build-docker.sh --mode ci --tag 1.0.0
-
-# Multi-architecture build
-./scripts/build-docker.sh --mode ci --tag 1.0.0 --multi-arch --push
+kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/namespace.yaml
+kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/rbac.yaml
+kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/deployment.yaml
+kubectl apply -f https://raw.githubusercontent.com/mvrao94/KubeGuard/main/k8s/service.yaml
 ```
 
-See [scripts/README.md](scripts/README.md) for detailed Docker documentation.
+## 🔐 Security
 
-## 🔗 API Reference
+**Mandatory Authentication**: KubeGuard requires API key authentication. The application **WILL FAIL TO START** without `KUBEGUARD_API_KEY` environment variable.
 
-**Complete API Documentation**: See [docs/API.md](docs/API.md) for full reference
+```bash
+# Generate secure key
+export KUBEGUARD_API_KEY=$(openssl rand -hex 32)
 
-**Interactive Documentation**: http://localhost:8080/swagger-ui.html
+# All API requests require X-API-Key header
+curl -H "X-API-Key: $KUBEGUARD_API_KEY" http://localhost:8080/api/v1/reports
+```
 
-**OpenAPI Spec**: http://localhost:8080/api-docs
+**No bypass mechanism exists**. This is a security scanner that is actually secure.
 
-### Authentication
-Currently, KubeGuard runs without authentication for demo purposes. In production, implement proper authentication and authorization.
+## 📖 API Reference
 
 ### Core Endpoints
 
-#### Start Manifest Scan
-```http
+**Start Manifest Scan**
+```bash
 POST /api/v1/scan/manifests
-Content-Type: application/json
-
 {
-  "path": "/path/to/kubernetes/manifests",
-  "description": "Optional scan description"
+  "path": "/path/to/manifests",
+  "description": "Optional description"
 }
 ```
 
-**Response:**
-```json
-{
-  "scanId": "123e4567-e89b-12d3-a456-426614174000",
-  "message": "Manifest scan started successfully",
-  "status": "RUNNING"
-}
-```
-
-#### Start Cluster Scan
-```http
+**Start Cluster Scan**
+```bash
 GET /api/v1/scan/cluster/{namespace}
 ```
 
-**Response:**
-```json
-{
-  "scanId": "123e4567-e89b-12d3-a456-426614174000",
-  "message": "Cluster scan started successfully",
-  "status": "RUNNING"
-}
-```
-
-#### Get Scan Status
-```http
+**Get Scan Status**
+```bash
 GET /api/v1/scan/status/{scanId}
 ```
 
-**Response:**
-```json
-{
-  "id": 1,
-  "scanId": "123e4567-e89b-12d3-a456-426614174000",
-  "scanType": "MANIFEST",
-  "target": "/path/to/manifests",
-  "timestamp": "2024-01-15T10:30:00",
-  "status": "COMPLETED",
-  "totalResources": 5,
-  "criticalIssues": 2,
-  "highIssues": 3,
-  "mediumIssues": 1,
-  "lowIssues": 0,
-  "findings": [
-    {
-      "resourceName": "nginx-deployment",
-      "resourceType": "Deployment",
-      "namespace": "default",
-      "ruleId": "CON001",
-      "title": "Privileged Container Detected",
-      "description": "Container is running in privileged mode...",
-      "severity": "CRITICAL",
-      "category": "Container Security",
-      "remediation": "Remove privileged: true from container security context...",
-      "location": "Container: nginx"
-    }
-  ]
-}
-```
-
-#### Get All Reports
-```http
-GET /api/v1/reports?page=0&size=10&sortBy=timestamp&sortDir=desc
-```
-
-#### Get Security Metrics
-```http
+**Get Reports**
+```bash
+GET /api/v1/reports
 GET /api/v1/reports/analytics/summary
 ```
 
-**Response:**
-```json
-{
-  "totalReports": 25,
-  "completedReports": 23,
-  "failedReports": 1,
-  "runningReports": 1,
-  "totalCriticalFindings": 15,
-  "totalHighFindings": 42
-}
-```
+**Interactive Documentation**: http://localhost:8080/swagger-ui.html
 
-### Example Usage
-
-```bash
-# Start a manifest scan
-curl -X POST http://localhost:8080/api/v1/scan/manifests \
-  -H "Content-Type: application/json" \
-  -d '{"path": "./sample-manifests"}'
-
-# Get scan status
-curl http://localhost:8080/api/v1/scan/status/{scanId}
-
-# Start a cluster scan
-curl http://localhost:8080/api/v1/scan/cluster/default
-
-# Get security metrics
-curl http://localhost:8080/api/v1/reports/analytics/summary
-```
+Full API reference: [docs/API.md](docs/API.md)
 
 ## 🛡️ Security Rules
 
-KubeGuard implements 27+ comprehensive security rules based on CIS Kubernetes Benchmark and industry best practices:
+**70+ comprehensive rules** across 7 categories:
 
-### Container Security Rules (12 rules)
-- **CON001**: Privileged Container Detection (Critical)
-- **CON002**: Container Running as Root (High)
-- **CON003**: Missing Resource Limits (Medium)
-- **CON004**: Missing Readiness Probe (Low)
-- **CON005**: Missing Liveness Probe (Low)
-- **CON006**: Using Latest Tag (Medium)
-- **CON007**: Root Filesystem Not Read-Only (Medium)
-- **CON008**: RunAsNonRoot Not Enforced (High)
-- **CON009**: Privilege Escalation Allowed (High)
-- **CON010**: Additional Capabilities Added (Medium)
-- **CON011**: Capabilities Not Dropped (Medium)
-- **CON012**: Missing Startup Probe (Low)
+- **Container Security** (12 rules): Privileged containers, root users, resource limits
+- **Pod Security** (7 rules): Security contexts, host namespaces, hostPath volumes
+- **Network Security** (2 rules): Network policies, TLS configuration
+- **RBAC** (2 rules): Overly permissive roles, service account usage
+- **Secret Management** (2 rules): Hardcoded secrets, token auto-mount
+- **Resource Management** (1 rule): Missing resource requests
+- **MITRE ATT&CK** (20+ techniques): Container-specific attack patterns
 
-### Pod Security Rules (7 rules)
-- **POD001**: Missing Pod Security Context (Medium)
-- **POD002**: Pod Running as Root (High)
-- **POD003**: Missing FSGroup (Low)
-- **POD004**: Host Network Enabled (High)
-- **POD005**: Host PID Namespace Enabled (High)
-- **POD006**: Host IPC Namespace Enabled (High)
-- **POD007**: HostPath Volume Detected (Critical)
+**Compliance Mappings**:
+- CIS Kubernetes Benchmark: 30+ rules
+- NSA/CISA Hardening Guide: 25+ rules
+- MITRE ATT&CK for Containers: 20+ techniques
+- OWASP Kubernetes Top 10: 10+ rules
 
-### Service Security Rules (1 rule)
-- **SVC001**: LoadBalancer Service Exposure (Medium)
+See [Security Rules Reference](docs/SECURITY_RULES_REFERENCE.md) for complete list.
 
-### Network Security Rules (2 rules)
-- **NET001**: Missing Network Policies (Medium)
-- **NET002**: Ingress Without TLS (High)
+## ⚡ Performance
 
-### RBAC Rules (2 rules)
-- **RBAC001**: Overly Permissive Roles (High)
-- **RBAC002**: Use of Default Service Account (Medium)
+### Measured Facts
 
-### Secret Management Rules (2 rules)
-- **SEC001**: Hardcoded Secret in Environment Variable (Critical)
-- **SEC002**: Service Account Token Auto-Mount Enabled (Low)
+| Metric | Value | Status |
+|--------|-------|--------|
+| **Container Image (JVM)** | 166 MB | ✅ Measured |
+| **Native Image Profile** | Configured | ⚠️ Untested |
+| **Virtual Threads** | Implemented | ✅ Verified |
 
-### Resource Management Rules (1 rule)
-- **RES001**: Missing Resource Requests (Medium)
+### Comparison with Go Tools
 
-For detailed information about each rule, including remediation steps and compliance mapping, see the [Security Rules Reference](docs/SECURITY_RULES_REFERENCE.md).
+| Tool | Language | Image Size |
+|------|----------|------------|
+| **KubeGuard (JVM)** | Java | 166 MB |
+| Kubesec | Go | ~20 MB |
+| Polaris | Go | ~40 MB |
+| Kube-bench | Go | ~30 MB |
 
-## ⚙️ Configuration
+**Reality**: Java containers are 4-8x larger than Go alternatives. Native Image may reduce this but is untested.
 
-### Application Properties
+See [Performance Analysis](PERFORMANCE.md) for honest assessment.
 
-```yaml
-# application.yml
-server:
-  port: 8080
+## 📊 Monitoring
 
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/kubeguard
-    username: kubeguard
-    password: ${DB_PASSWORD}
-  
-kubeguard:
-  security:
-    rules:
-      enabled: true
-      strict-mode: false
-  scan:
-    max-concurrent: 10
-    timeout-minutes: 30
-    cleanup-days: 7
-```
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `SPRING_PROFILES_ACTIVE` | Active Spring profiles | `default` |
-| `DB_PASSWORD` | Database password | `changeme` |
-| `JAVA_OPTS` | JVM options | `-Xmx512m -Xms256m` |
-
-## 🚀 Deployment
-
-### Kubernetes Deployment (Production)
+Built-in Prometheus metrics and Grafana dashboards:
 
 ```bash
-# Create namespace and RBAC
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/rbac.yaml
-
-# Deploy database
-kubectl apply -f k8s/postgres.yaml
-
-# Deploy application
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/ingress.yaml
-
-# Apply production configurations
-kubectl apply -f k8s/hpa.yaml
-kubectl apply -f k8s/poddisruptionbudget.yaml
-kubectl apply -f k8s/networkpolicy.yaml
-```
-
-### Helm Deployment (Alternative)
-
-```bash
-# Add Helm repository
-helm repo add kubeguard https://mvrao94.github.io/KubeGuard
-
-# Install KubeGuard
-helm install kubeguard kubeguard/kubeguard \
-  --namespace kubeguard \
-  --create-namespace \
-  --set image.tag=latest \
-  --set ingress.enabled=true \
-  --set ingress.hosts[0].host=kubeguard.yourdomain.com
-```
-
-### Docker Swarm Deployment
-
-```yaml
-# docker-stack.yml
-version: '3.8'
-
-services:
-  kubeguard:
-    image: mvrao94/kubeguard:latest
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=production
-      - DB_PASSWORD_FILE=/run/secrets/db_password
-    secrets:
-      - db_password
-    deploy:
-      replicas: 3
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-
-secrets:
-  db_password:
-    external: true
-```
-
-## 📊 Monitoring & Observability
-
-KubeGuard includes comprehensive observability with Prometheus metrics, health checks, and Grafana dashboards.
-
-### Quick Start
-
-```bash
-# Start with full monitoring stack
+# Start with monitoring stack
 docker-compose -f scripts/docker-compose.yml up -d
 
-# Access monitoring tools
+# Access
+# - Application: http://localhost:8080
 # - Prometheus: http://localhost:9090
 # - Grafana: http://localhost:3000 (admin/admin)
-# - Metrics: http://localhost:8080/actuator/prometheus
 ```
 
-### Health Checks
-
-```bash
-# Application health
-curl http://localhost:8080/actuator/health
-
-# Kubernetes readiness probe
-curl http://localhost:8080/actuator/health/readiness
-
-# Kubernetes liveness probe
-curl http://localhost:8080/actuator/health/liveness
-```
-
-### Key Metrics
-
-**Application Metrics:**
-- `kubeguard_scans_total` - Total scans by type and status
-- `kubeguard_scans_active` - Currently running scans
-- `kubeguard_scans_completed` - Completed scans
-- `kubeguard_scans_failed` - Failed scans
-- `kubeguard_scan_duration_seconds` - Scan duration histogram
+**Key Metrics**:
+- `kubeguard_scans_total` - Total scans by type/status
+- `kubeguard_scan_duration_seconds` - Scan duration
 - `kubeguard_findings_total` - Security findings by severity
-- `kubeguard_findings_count` - Total findings count
-- `kubeguard_scan_errors` - Scan errors by type
 
-**System Metrics:**
-- JVM memory, GC, and thread metrics
-- HTTP request duration and counts
-- CPU and system resource usage
+See [Observability Guide](docs/OBSERVABILITY.md) for details.
 
-### Grafana Dashboard
+## 📚 Documentation
 
-The pre-configured dashboard includes:
-- Real-time scan statistics
-- Performance metrics (p50, p95 latencies)
-- Security findings trends
-- JVM and system resource monitoring
-- Alert status
+**Essential**:
+- [Security Configuration](docs/SECURITY_CONFIGURATION.md) - Mandatory auth setup
+- [Native Image Build](docs/NATIVE_IMAGE_BUILD.md) - GraalVM build guide (experimental)
+- [API Reference](docs/API.md) - Complete REST API docs
 
-**Import Dashboard:**
-1. Access Grafana at http://localhost:3000
-2. Login with admin/admin
-3. Dashboard is auto-provisioned as "KubeGuard Monitoring Dashboard"
+**Architecture**:
+- [Rule Engine](docs/RULE_ENGINE_ARCHITECTURE.md) - Extensible rule system
+- [Security Integrations](docs/SECURITY_INTEGRATIONS.md) - NVD & MITRE ATT&CK
+- [Security Rules](docs/SECURITY_RULES_REFERENCE.md) - 70+ rules catalog
 
-### Alerts
-
-Pre-configured Prometheus alerts:
-- High scan failure rate
-- Service availability issues
-- Memory usage warnings
-- Performance degradation
-- Critical security findings
-
-### Documentation
-
-- 📖 [Documentation Home](docs/README.md)
-- 📖 [API Reference](docs/API.md)
-- 📖 [Security Configuration](docs/SECURITY_CONFIGURATION.md) - **REQUIRED!** Authentication Setup
-- 📖 [Performance Benchmarks](PERFORMANCE.md) - **NEW!** JVM vs Native Image
-- 📖 [Rule Engine Architecture](docs/RULE_ENGINE_ARCHITECTURE.md)
-- 📖 [Security Integrations](docs/SECURITY_INTEGRATIONS.md) - NIST NVD & MITRE ATT&CK
-- 📖 [Observability Guide](docs/OBSERVABILITY.md)
-- 📖 [Security Rules](docs/SECURITY_RULES_REFERENCE.md)
-- 📖 [Project Structure](docs/PROJECT_STRUCTURE.md)
-- 🚀 [Quick Start Guide](docs/OBSERVABILITY_QUICKSTART.md)
-- 🔧 [Monitoring Setup](monitoring/README.md)
+**Operations**:
+- [Observability](docs/OBSERVABILITY.md) - Monitoring & metrics
+- [Performance](PERFORMANCE.md) - Honest JVM vs Go comparison
 
 ## 🧪 Development
 
-### Local Development Setup
-
 ```bash
-# Clone the repository
-git clone https://github.com/mvrao94/KubeGuard.git
-cd KubeGuard
-
-# Setup development environment
-make setup-dev
-
 # Run tests
-make test
+./mvnw test
 
-# Start the application
-make run
-```
+# Run with coverage
+./mvnw verify
 
-### Testing
+# Build Docker images
+docker build -t kubeguard:jvm .
+docker build -f Dockerfile.native -t kubeguard:native .
 
-```bash
-# Unit tests
-mvn test
-
-# Integration tests
-mvn verify
-
-# Security scan
-make security-scan
-
-# Generate coverage report
-mvn jacoco:report
-```
-
-### Code Quality
-
-```bash
-# Format code
-make format
-
-# Lint code
-make lint
-
-# Generate documentation
-make docs
+# Verify Native Image performance
+./scripts/verify-native-build.sh
 ```
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-### Quick Contribution Guide
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Make your changes and add tests**
-4. **Run the test suite**: `make test`
-5. **Commit your changes**: `git commit -m 'Add amazing feature'`
-6. **Push to your branch**: `git push origin feature/amazing-feature`
-7. **Open a Pull Request**
-
-### Development Standards
-
-- **Code Coverage**: Maintain >80% test coverage
-- **Documentation**: Update docs for any API changes
-- **Security**: Follow secure coding practices
-- **Performance**: Consider performance impact of changes
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Make changes and add tests
+4. Run test suite: `./mvnw test`
+5. Commit: `git commit -m 'Add amazing feature'`
+6. Push: `git push origin feature/amazing-feature`
+7. Open Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file.
 
 ## 🆘 Support
 
 - **Issues**: [GitHub Issues](https://github.com/mvrao94/KubeGuard/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/mvrao94/KubeGuard/discussions)
-- **Security Issues**: [Security Policy](SECURITY.md)
-
-## 🙏 Acknowledgments
-
-- **CIS Kubernetes Benchmark** for security guidelines
-- **Kubernetes Community** for excellent documentation
-- **Spring Boot Team** for the fantastic framework
-- **All Contributors** who have helped improve KubeGuard
+- **Security**: [Security Policy](SECURITY.md)
 
 ---
 
