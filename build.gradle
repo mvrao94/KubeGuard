@@ -1,0 +1,87 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.0'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'io.github.mvrao94'
+version = '0.0.4-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    kubernetesClientVersion = '25.0.0'
+    apacheCommonsIoVersion = '2.21.0'
+    mockitoCoreVersion = '5.20.0'
+    springdocOpenapiVersion = '3.0.0'
+    testcontainersVersion = '1.21.3'
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'io.micrometer:micrometer-core'
+    
+    implementation "io.kubernetes:client-java:${kubernetesClientVersion}"
+    
+    implementation 'org.apache.commons:commons-lang3'
+    implementation "commons-io:commons-io:${apacheCommonsIoVersion}"
+    
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    implementation 'org.yaml:snakeyaml'
+    
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocOpenapiVersion}"
+    
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'org.postgresql:postgresql'
+    
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation "org.testcontainers:junit-jupiter:${testcontainersVersion}"
+    testImplementation "org.testcontainers:postgresql:${testcontainersVersion}"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    
+    jvmArgs "-javaagent:${configurations.testRuntimeClasspath.find { it.name.contains('mockito-core') }}"
+    
+    finalizedBy jacocoTestReport
+}
+
+tasks.register('jacocoTestReport', JacocoReport) {
+    dependsOn test
+    
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+bootJar {
+    excludes = ['**/lombok/**']
+}
