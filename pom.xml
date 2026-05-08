@@ -46,6 +46,8 @@
     <native-maven-plugin.version>1.1.0</native-maven-plugin.version>
     <!-- CVE-2026-0636, CVE-2026-5588: force patched Bouncy Castle version for all BC artifacts -->
     <bouncycastle.version>1.84</bouncycastle.version>
+    <!-- CVE-2026-42198: SCRAM PBKDF2 unbounded iterations DoS in pgjdbc < 42.7.11 -->
+    <postgresql.version>42.7.11</postgresql.version>
   </properties>
 
   <dependencyManagement>
