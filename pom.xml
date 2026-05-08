@@ -40,12 +40,32 @@
     <java.version>25</java.version>
     <kubernetes-client.version>26.0.0</kubernetes-client.version>
     <apache-commons-io.version>2.22.0</apache-commons-io.version>
-    <mockito-core.version>5.23.0</mockito-core.version>
     <springdoc-openapi-starter-webmvc-ui.version>3.0.3</springdoc-openapi-starter-webmvc-ui.version>
     <testcontainers.junit-jupiter.version>1.21.4</testcontainers.junit-jupiter.version>
     <testcontainers.postgresql.version>1.21.4</testcontainers.postgresql.version>
     <native-maven-plugin.version>1.1.0</native-maven-plugin.version>
+    <!-- CVE-2026-0636, CVE-2026-5588: force patched Bouncy Castle version for all BC artifacts -->
+    <bouncycastle.version>1.84</bouncycastle.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Force bcprov-jdk18on to 1.84 to remediate CVE-2026-0636 (LDAP injection, affects 1.74–1.83)
+           pulled in transitively by io.kubernetes:client-java -->
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <!-- Force bcpkix-jdk18on to 1.84 to remediate CVE-2026-5588 (affects 1.83)
+           pulled in transitively by io.kubernetes:client-java -->
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -181,8 +201,7 @@
             <include>**/*Test.java</include>
             <include>**/*Tests.java</include>
           </includes>
-          <argLine>@{argLine}
-                        -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito-core.version}/mockito-core-${mockito-core.version}.jar</argLine>
+          <argLine>@{argLine}</argLine>
         </configuration>
       </plugin>
 
