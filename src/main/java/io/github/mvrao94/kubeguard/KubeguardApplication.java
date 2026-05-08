@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
 public class KubeguardApplication {
 
-  public static void main(String[] args) {
+  static void main(String[] args) {
     SpringApplication.run(KubeguardApplication.class, args);
   }
 }

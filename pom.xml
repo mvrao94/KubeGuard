@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.6</version>
   </parent>
   <groupId>io.github.mvrao94</groupId>
   <artifactId>kubeguard</artifactId>
@@ -38,12 +38,12 @@
 
   <properties>
     <java.version>25</java.version>
-    <kubernetes-client.version>25.0.0</kubernetes-client.version>
-    <apache-commons-io.version>2.21.0</apache-commons-io.version>
-    <mockito-core.version>5.20.0</mockito-core.version>
-    <springdoc-openapi-starter-webmvc-ui.version>3.0.0</springdoc-openapi-starter-webmvc-ui.version>
-    <testcontainers.version>1.21.3</testcontainers.version>
-    <native-maven-plugin.version>0.10.3</native-maven-plugin.version>
+    <kubernetes-client.version>26.0.0</kubernetes-client.version>
+    <apache-commons-io.version>2.22.0</apache-commons-io.version>
+    <mockito-core.version>5.23.0</mockito-core.version>
+    <springdoc-openapi-starter-webmvc-ui.version>3.0.3</springdoc-openapi-starter-webmvc-ui.version>
+    <testcontainers.version>2.0.5</testcontainers.version>
+    <native-maven-plugin.version>1.1.0</native-maven-plugin.version>
   </properties>
 
   <dependencies>
@@ -138,16 +138,21 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>postgresql</artifactId>
-      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>spring-releases</id>
+      <url>https://repo.spring.io/release</url>
+    </pluginRepository>
+  </pluginRepositories>
 
   <build>
     <plugins>
@@ -224,15 +229,6 @@
             <artifactId>native-maven-plugin</artifactId>
             <version>${native-maven-plugin.version}</version>
             <extensions>true</extensions>
-            <executions>
-              <execution>
-                <id>build-native</id>
-                <goals>
-                  <goal>compile-no-fork</goal>
-                </goals>
-                <phase>package</phase>
-              </execution>
-            </executions>
             <configuration>
               <imageName>kubeguard</imageName>
               <mainClass>io.github.mvrao94.kubeguard.KubeguardApplication</mainClass>
@@ -242,6 +238,15 @@
                 <buildArg>--initialize-at-build-time=org.slf4j</buildArg>
               </buildArgs>
             </configuration>
+            <executions>
+              <execution>
+                <id>build-native</id>
+                <goals>
+                  <goal>compile-no-fork</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
           </plugin>
           <plugin>
             <groupId>org.springframework.boot</groupId>
