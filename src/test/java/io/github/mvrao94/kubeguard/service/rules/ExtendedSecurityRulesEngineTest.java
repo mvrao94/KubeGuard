@@ -180,7 +180,7 @@ class ExtendedSecurityRulesEngineTest {
     assertThat(findings).anyMatch(f ->
         f.getRuleId().equals("SEC001") &&
         f.getLocation() != null &&
-        f.getLocation().contains("init"));
+        f.getLocation().contains("Container: init"));
   }
 
   @Test
