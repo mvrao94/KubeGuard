@@ -297,6 +297,13 @@ public class SecurityRulesEngine {
       }
     }
 
+    List<V1Container> initContainers = podSpec.getInitContainers();
+    if (initContainers != null) {
+      for (V1Container container : initContainers) {
+        findings.addAll(checkHardcodedSecrets(container, resourceName, resourceType, namespace));
+      }
+    }
+
     // SEC002: Check for automountServiceAccountToken
     if (podSpec.getAutomountServiceAccountToken() == null
         || Boolean.TRUE.equals(podSpec.getAutomountServiceAccountToken())) {
@@ -358,27 +365,48 @@ public class SecurityRulesEngine {
     }
 
     List<V1Container> containers = podSpec.getContainers();
-    if (containers == null) {
-      return findings;
+    if (containers != null) {
+      for (V1Container container : containers) {
+        if (container == null) {
+          continue;
+        }
+        V1ResourceRequirements resources = container.getResources();
+
+        // RES001: Check for missing resource requests
+        if (resources == null
+            || resources.getRequests() == null
+            || resources.getRequests().isEmpty()) {
+          findings.add(createFinding(
+              resourceName, resourceType, namespace,
+              "RES001", "Missing Resource Requests",
+              "Container does not have resource requests defined.",
+              Severity.MEDIUM, "Resource Management",
+              "Define CPU and memory requests for proper scheduling and resource allocation.",
+              "Container: " + container.getName()));
+        }
+      }
     }
 
-    for (V1Container container : containers) {
-      if (container == null) {
-        continue;
-      }
-      V1ResourceRequirements resources = container.getResources();
+    List<V1Container> initContainers = podSpec.getInitContainers();
+    if (initContainers != null) {
+      for (V1Container container : initContainers) {
+        if (container == null) {
+          continue;
+        }
+        V1ResourceRequirements resources = container.getResources();
 
-      // RES001: Check for missing resource requests
-      if (resources == null
-          || resources.getRequests() == null
-          || resources.getRequests().isEmpty()) {
-        findings.add(createFinding(
-            resourceName, resourceType, namespace,
-            "RES001", "Missing Resource Requests",
-            "Container does not have resource requests defined.",
-            Severity.MEDIUM, "Resource Management",
-            "Define CPU and memory requests for proper scheduling and resource allocation.",
-            "Container: " + container.getName()));
+        // RES001: Check for missing resource requests in init containers too
+        if (resources == null
+            || resources.getRequests() == null
+            || resources.getRequests().isEmpty()) {
+          findings.add(createFinding(
+              resourceName, resourceType, namespace,
+              "RES001", "Missing Resource Requests",
+              "Init container does not have resource requests defined.",
+              Severity.MEDIUM, "Resource Management",
+              "Define CPU and memory requests for proper scheduling and resource allocation.",
+              "Container: " + container.getName()));
+        }
       }
     }
 
