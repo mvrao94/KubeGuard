@@ -81,6 +81,24 @@ class SecurityRulesEngineRbacTest {
   // --- resolveName / resolveNamespace via analyzeRole ---
 
   @Test
+  void analyzeRole_withNonNullNameAndNamespace_usesActualValues() {
+    V1Role role = new V1Role();
+    V1ObjectMeta meta = new V1ObjectMeta();
+    meta.setName("my-role");
+    meta.setNamespace("production");
+    role.setMetadata(meta);
+    V1PolicyRule rule = new V1PolicyRule();
+    rule.setVerbs(List.of("*"));
+    role.setRules(List.of(rule));
+
+    List<SecurityFinding> findings = rulesEngine.analyzeRole(role);
+
+    assertThat(findings).isNotEmpty();
+    assertThat(findings.get(0).getResourceName()).isEqualTo("my-role");
+    assertThat(findings.get(0).getNamespace()).isEqualTo("production");
+  }
+
+  @Test
   void analyzeRole_withNullName_usesUnknownFallback() {
     V1Role role = new V1Role();
     V1ObjectMeta meta = new V1ObjectMeta();

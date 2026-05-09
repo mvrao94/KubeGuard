@@ -1,13 +1,28 @@
 package io.github.mvrao94.kubeguard.service.rules;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import io.github.mvrao94.kubeguard.model.SecurityFinding;
 import io.github.mvrao94.kubeguard.model.Severity;
-import io.kubernetes.client.openapi.models.*;
-import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1DeploymentSpec;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
+import io.kubernetes.client.openapi.models.V1Ingress;
+import io.kubernetes.client.openapi.models.V1IngressSpec;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1PolicyRule;
+import io.kubernetes.client.openapi.models.V1Role;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Volume;
 
 /** Extended unit tests for SecurityRulesEngine - testing new rules */
 class ExtendedSecurityRulesEngineTest {
@@ -125,6 +140,72 @@ class ExtendedSecurityRulesEngineTest {
                 finding.getRuleId().equals("RBAC001")
                     && finding.getSeverity() == Severity.HIGH
                     && finding.getTitle().contains("Overly Permissive"));
+  }
+
+  @Test
+  void testAnalyzeDeployment_WithInitContainers() {
+    // Given - deployment with an init container that has a hardcoded secret
+    V1Deployment deployment = new V1Deployment();
+    V1ObjectMeta metadata = new V1ObjectMeta();
+    metadata.setName("test-deployment");
+    metadata.setNamespace("default");
+    deployment.setMetadata(metadata);
+
+    V1DeploymentSpec spec = new V1DeploymentSpec();
+    V1PodTemplateSpec template = new V1PodTemplateSpec();
+    V1PodSpec podSpec = new V1PodSpec();
+
+    V1Container mainContainer = new V1Container();
+    mainContainer.setName("main");
+    mainContainer.setImage("nginx:1.20");
+    podSpec.setContainers(List.of(mainContainer));
+
+    V1Container initContainer = new V1Container();
+    initContainer.setName("init");
+    initContainer.setImage("busybox:1.35");
+    V1EnvVar secretEnv = new V1EnvVar();
+    secretEnv.setName("DB_PASSWORD");
+    secretEnv.setValue("hardcoded-secret");
+    initContainer.setEnv(List.of(secretEnv));
+    podSpec.setInitContainers(List.of(initContainer));
+
+    template.setSpec(podSpec);
+    spec.setTemplate(template);
+    deployment.setSpec(spec);
+
+    // When
+    List<SecurityFinding> findings = rulesEngine.analyzeDeployment(deployment);
+
+    // Then - SEC001 should be found from the init container
+    assertThat(findings).anyMatch(f ->
+        f.getRuleId().equals("SEC001") &&
+        f.getLocation() != null &&
+        f.getLocation().contains("init"));
+  }
+
+  @Test
+  void testAnalyzePod_WithContainersAndSecurityChecks() {
+    // Given
+    V1Pod pod = new V1Pod();
+    V1ObjectMeta metadata = new V1ObjectMeta();
+    metadata.setName("test-pod");
+    metadata.setNamespace("default");
+    pod.setMetadata(metadata);
+
+    V1PodSpec podSpec = new V1PodSpec();
+    V1Container container = new V1Container();
+    container.setName("app");
+    container.setImage("nginx:latest");
+    podSpec.setContainers(List.of(container));
+    podSpec.setHostNetwork(true);
+    pod.setSpec(podSpec);
+
+    // When
+    List<SecurityFinding> findings = rulesEngine.analyzePod(pod);
+
+    // Then - should find CON006 (latest tag) and POD004 (hostNetwork)
+    assertThat(findings).anyMatch(f -> f.getRuleId().equals("CON006"));
+    assertThat(findings).anyMatch(f -> f.getRuleId().equals("POD004"));
   }
 
   // Helper methods to create test resources
