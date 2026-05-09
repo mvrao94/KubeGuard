@@ -1,5 +1,20 @@
 package io.github.mvrao94.kubeguard.controller;
 
+import java.util.Optional;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import io.github.mvrao94.kubeguard.dto.ScanRequest;
 import io.github.mvrao94.kubeguard.dto.ScanResponse;
 import io.github.mvrao94.kubeguard.model.ScanReport;
@@ -12,15 +27,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 /** REST Controller for security scanning operations */
 @RestController
@@ -35,6 +41,23 @@ public class ScanController {
   private static final Logger logger = LoggerFactory.getLogger(ScanController.class);
 
   @Autowired private ScanService scanService;
+
+  // --- Shared helpers ---
+
+  private ScanResponse errorResponse(String message) {
+    ScanResponse r = new ScanResponse();
+    r.setMessage(message);
+    r.setStatus("FAILED");
+    return r;
+  }
+
+  private ScanResponse startedResponse(String scanId, String message) {
+    ScanResponse r = new ScanResponse();
+    r.setScanId(scanId);
+    r.setMessage(message);
+    r.setStatus("RUNNING");
+    return r;
+  }
 
   @Operation(
       summary = "Scan Kubernetes manifest files",
@@ -84,31 +107,16 @@ public class ScanController {
 
     try {
       String scanId = UUID.randomUUID().toString();
-
-      // Start async scan
-      CompletableFuture<ScanReport> futureReport =
-          scanService.scanManifests(request.getPath(), scanId);
-
-      ScanResponse response = new ScanResponse();
-      response.setScanId(scanId);
-      response.setMessage("Manifest scan started successfully");
-      response.setStatus("RUNNING");
-
-      return ResponseEntity.accepted().body(response);
+      scanService.scanManifests(request.getPath(), scanId);
+      return ResponseEntity.accepted().body(startedResponse(scanId, "Manifest scan started successfully"));
 
     } catch (IllegalArgumentException e) {
       logger.error("Invalid request for manifest scan: {}", e.getMessage());
-      ScanResponse errorResponse = new ScanResponse();
-      errorResponse.setMessage("Invalid request: " + e.getMessage());
-      errorResponse.setStatus("FAILED");
-      return ResponseEntity.badRequest().body(errorResponse);
+      return ResponseEntity.badRequest().body(errorResponse("Invalid request: " + e.getMessage()));
 
     } catch (Exception e) {
       logger.error("Unexpected error during manifest scan request: ", e);
-      ScanResponse errorResponse = new ScanResponse();
-      errorResponse.setMessage("Internal server error");
-      errorResponse.setStatus("FAILED");
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse("Internal server error"));
     }
   }
 
@@ -161,23 +169,12 @@ public class ScanController {
 
     try {
       String scanId = UUID.randomUUID().toString();
-
-      // Start async scan
-      CompletableFuture<ScanReport> futureReport = scanService.scanCluster(namespace, scanId);
-
-      ScanResponse response = new ScanResponse();
-      response.setScanId(scanId);
-      response.setMessage("Cluster scan started successfully");
-      response.setStatus("RUNNING");
-
-      return ResponseEntity.accepted().body(response);
+      scanService.scanCluster(namespace, scanId);
+      return ResponseEntity.accepted().body(startedResponse(scanId, "Cluster scan started successfully"));
 
     } catch (Exception e) {
       logger.error("Unexpected error during cluster scan request: ", e);
-      ScanResponse errorResponse = new ScanResponse();
-      errorResponse.setMessage("Internal server error");
-      errorResponse.setStatus("FAILED");
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse("Internal server error"));
     }
   }
 
