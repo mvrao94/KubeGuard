@@ -72,7 +72,6 @@ class NvdIntegrationServiceTest {
   @Test
   void scheduledSync_whenSyncDisabled_doesNothing() {
     ReflectionTestUtils.setField(service, "syncEnabled", false);
-    when(nvdClient.isEnabled()).thenReturn(true);
 
     service.scheduledSync();
 
