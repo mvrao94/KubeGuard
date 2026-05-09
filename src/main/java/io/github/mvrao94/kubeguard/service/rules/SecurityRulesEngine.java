@@ -1,11 +1,33 @@
 package io.github.mvrao94.kubeguard.service.rules;
 
-import io.github.mvrao94.kubeguard.model.SecurityFinding;
-import io.github.mvrao94.kubeguard.model.Severity;
-import io.kubernetes.client.openapi.models.*;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.springframework.stereotype.Component;
+
+import io.github.mvrao94.kubeguard.model.SecurityFinding;
+import io.github.mvrao94.kubeguard.model.Severity;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1DeploymentSpec;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Ingress;
+import io.kubernetes.client.openapi.models.V1IngressSpec;
+import io.kubernetes.client.openapi.models.V1IngressTLS;
+import io.kubernetes.client.openapi.models.V1NetworkPolicy;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1PolicyRule;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1Role;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.openapi.models.V1Volume;
 
 /** Security rules engine for analyzing Kubernetes resources */
 @Component
@@ -77,18 +99,9 @@ public class SecurityRulesEngine {
       }
     }
 
-    // Check pod-level security settings
-    findings.addAll(
-        analyzePodSecurityContext(
-            podSpec.getSecurityContext(), resourceName, "Deployment", namespace));
-
-    // Check pod host settings
+    findings.addAll(analyzePodSecurityContext(podSpec.getSecurityContext(), resourceName, "Deployment", namespace));
     findings.addAll(analyzePodHostSettings(podSpec, resourceName, "Deployment", namespace));
-
-    // Check secret management
     findings.addAll(analyzeSecretManagement(podSpec, resourceName, "Deployment", namespace));
-
-    // Check resource quotas
     findings.addAll(analyzeResourceQuotas(podSpec, resourceName, "Deployment", namespace));
 
     return findings;
@@ -104,28 +117,19 @@ public class SecurityRulesEngine {
     V1ObjectMeta metadata = pod.getMetadata();
     String resourceName = metadata.getName() != null ? metadata.getName() : "unknown";
     String namespace = metadata.getNamespace() != null ? metadata.getNamespace() : "default";
+    V1PodSpec podSpec = pod.getSpec();
 
-    // Check containers
-    List<V1Container> containers = pod.getSpec().getContainers();
+    List<V1Container> containers = podSpec.getContainers();
     if (containers != null) {
       for (V1Container container : containers) {
         findings.addAll(analyzeContainer(container, resourceName, "Pod", namespace));
       }
     }
 
-    // Check pod security context
-    findings.addAll(
-        analyzePodSecurityContext(
-            pod.getSpec().getSecurityContext(), resourceName, "Pod", namespace));
-
-    // Check pod host settings
-    findings.addAll(analyzePodHostSettings(pod.getSpec(), resourceName, "Pod", namespace));
-
-    // Check secret management
-    findings.addAll(analyzeSecretManagement(pod.getSpec(), resourceName, "Pod", namespace));
-
-    // Check resource quotas
-    findings.addAll(analyzeResourceQuotas(pod.getSpec(), resourceName, "Pod", namespace));
+    findings.addAll(analyzePodSecurityContext(podSpec.getSecurityContext(), resourceName, "Pod", namespace));
+    findings.addAll(analyzePodHostSettings(podSpec, resourceName, "Pod", namespace));
+    findings.addAll(analyzeSecretManagement(podSpec, resourceName, "Pod", namespace));
+    findings.addAll(analyzeResourceQuotas(podSpec, resourceName, "Pod", namespace));
 
     return findings;
   }
@@ -200,23 +204,31 @@ public class SecurityRulesEngine {
   }
 
   // --- RBAC Rules ---
+
+  /**
+   * Extracts name and namespace from metadata, falling back to safe defaults.
+   * Shared by analyzeRole and analyzeClusterRole to avoid duplicated null-checks.
+   */
+  private String resolveName(V1ObjectMeta metadata) {
+    return metadata.getName() != null ? metadata.getName() : "unknown";
+  }
+
+  private String resolveNamespace(V1ObjectMeta metadata) {
+    return metadata.getNamespace() != null ? metadata.getNamespace() : "default";
+  }
+
   public List<SecurityFinding> analyzeRole(V1Role role) {
     if (role == null || role.getMetadata() == null || role.getRules() == null) {
       return new ArrayList<>();
     }
-    V1ObjectMeta metadata = role.getMetadata();
-    String resourceName = metadata.getName() != null ? metadata.getName() : "unknown";
-    String namespace = metadata.getNamespace() != null ? metadata.getNamespace() : "default";
-    return analyzeRbacRules(role.getRules(), resourceName, "Role", namespace);
+    return analyzeRbacRules(role.getRules(), resolveName(role.getMetadata()), "Role", resolveNamespace(role.getMetadata()));
   }
 
   public List<SecurityFinding> analyzeClusterRole(V1ClusterRole clusterRole) {
     if (clusterRole == null || clusterRole.getMetadata() == null || clusterRole.getRules() == null) {
       return new ArrayList<>();
     }
-    V1ObjectMeta metadata = clusterRole.getMetadata();
-    String resourceName = metadata.getName() != null ? metadata.getName() : "unknown";
-    return analyzeRbacRules(clusterRole.getRules(), resourceName, "ClusterRole", "");
+    return analyzeRbacRules(clusterRole.getRules(), resolveName(clusterRole.getMetadata()), "ClusterRole", "");
   }
 
   private List<SecurityFinding> analyzeRbacRules(

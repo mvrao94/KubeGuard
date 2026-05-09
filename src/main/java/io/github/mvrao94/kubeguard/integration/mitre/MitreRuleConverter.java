@@ -1,8 +1,18 @@
 package io.github.mvrao94.kubeguard.integration.mitre;
 
-import io.github.mvrao94.kubeguard.rules.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.stereotype.Component;
+
+import io.github.mvrao94.kubeguard.rules.InformationalSecurityRule;
+import io.github.mvrao94.kubeguard.rules.RuleCategory;
+import io.github.mvrao94.kubeguard.rules.RuleMetadata;
+import io.github.mvrao94.kubeguard.rules.RuleSeverity;
+import io.github.mvrao94.kubeguard.rules.SecurityRule;
+
+// MitreSecurityRule extends InformationalSecurityRule to avoid copy-pasting no-op evaluate/appliesTo/getSupportedResourceTypes
 
 /**
  * Converts MITRE ATT&CK techniques to KubeGuard security rules
@@ -30,13 +40,11 @@ public class MitreRuleConverter {
   /**
    * Inner class implementing SecurityRule for MITRE techniques
    */
-  private static class MitreSecurityRule implements SecurityRule {
+  private static class MitreSecurityRule extends InformationalSecurityRule {
     
-    private final MitreTechnique technique;
     private final RuleMetadata metadata;
     
     public MitreSecurityRule(MitreTechnique technique) {
-      this.technique = technique;
       this.metadata = buildMetadata(technique);
     }
     
@@ -110,24 +118,6 @@ public class MitreRuleConverter {
     @Override
     public RuleMetadata getMetadata() {
       return metadata;
-    }
-    
-    @Override
-    public List<RuleViolation> evaluate(Object resource) {
-      // MITRE rules are informational - they provide attack context
-      // Actual detection would be implemented in specific rules
-      return Collections.emptyList();
-    }
-    
-    @Override
-    public boolean appliesTo(Class<?> resourceType) {
-      // MITRE rules are informational
-      return false;
-    }
-    
-    @Override
-    public List<Class<?>> getSupportedResourceTypes() {
-      return Collections.emptyList();
     }
   }
 }

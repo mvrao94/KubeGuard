@@ -1,8 +1,18 @@
 package io.github.mvrao94.kubeguard.integration.nvd;
 
-import io.github.mvrao94.kubeguard.rules.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
 import org.springframework.stereotype.Component;
+
+import io.github.mvrao94.kubeguard.rules.InformationalSecurityRule;
+import io.github.mvrao94.kubeguard.rules.RuleCategory;
+import io.github.mvrao94.kubeguard.rules.RuleMetadata;
+import io.github.mvrao94.kubeguard.rules.RuleSeverity;
+import io.github.mvrao94.kubeguard.rules.SecurityRule;
+
+// NvdSecurityRule extends InformationalSecurityRule to avoid copy-pasting no-op evaluate/appliesTo/getSupportedResourceTypes
 
 /**
  * Converts NVD vulnerabilities to KubeGuard security rules
@@ -30,13 +40,11 @@ public class NvdRuleConverter {
   /**
    * Inner class implementing SecurityRule for NVD vulnerabilities
    */
-  private static class NvdSecurityRule implements SecurityRule {
+  private static class NvdSecurityRule extends InformationalSecurityRule {
     
-    private final NvdVulnerability vulnerability;
     private final RuleMetadata metadata;
     
     public NvdSecurityRule(NvdVulnerability vuln) {
-      this.vulnerability = vuln;
       this.metadata = buildMetadata(vuln);
     }
     
@@ -104,24 +112,6 @@ public class NvdRuleConverter {
     @Override
     public RuleMetadata getMetadata() {
       return metadata;
-    }
-    
-    @Override
-    public List<RuleViolation> evaluate(Object resource) {
-      // NVD rules are informational - they don't evaluate resources directly
-      // They provide vulnerability context for other rules
-      return Collections.emptyList();
-    }
-    
-    @Override
-    public boolean appliesTo(Class<?> resourceType) {
-      // NVD rules are informational
-      return false;
-    }
-    
-    @Override
-    public List<Class<?>> getSupportedResourceTypes() {
-      return Collections.emptyList();
     }
   }
 }
