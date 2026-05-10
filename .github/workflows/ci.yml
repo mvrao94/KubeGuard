@@ -21,6 +21,8 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     name: Build and Test
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     permissions:
       checks: write
       contents: read
@@ -63,6 +65,12 @@ jobs:
           rm -f target/*-plain.jar || true
           java -Djarmode=layertools -jar target/*.jar extract --destination target/extracted
           mkdir -p target/extracted/dependencies target/extracted/spring-boot-loader target/extracted/snapshot-dependencies target/extracted/application
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
@@ -152,19 +160,12 @@ jobs:
           name: kubeguard-layers
           path: target/extracted
 
-      - name: Set up JDK 25
-        uses: actions/setup-java@v5
-        with:
-          java-version: '25'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Extract version from pom.xml
-        id: version
+      - name: Ensure layer directories exist
         run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Extracted version: $VERSION"
+          mkdir -p target/extracted/dependencies target/extracted/spring-boot-loader target/extracted/snapshot-dependencies target/extracted/application
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -183,7 +184,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ needs.build-and-test.outputs.version }}
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -191,7 +192,7 @@ jobs:
             org.opencontainers.image.title=KubeGuard
             org.opencontainers.image.description=Kubernetes Security Scanner
             org.opencontainers.image.vendor=KubeGuard Team
-            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.version=${{ needs.build-and-test.outputs.version }}
 
       - name: Build and push Docker image
         id: build
@@ -204,7 +205,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            APP_VERSION=${{ steps.version.outputs.version }}
+            APP_VERSION=${{ needs.build-and-test.outputs.version }}
             BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
             VCS_REF=${{ github.sha }}
           cache-from: type=gha
