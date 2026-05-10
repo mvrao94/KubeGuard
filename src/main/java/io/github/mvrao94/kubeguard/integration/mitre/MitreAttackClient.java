@@ -292,4 +292,8 @@ public class MitreAttackClient {
       String description,
       List<String> k8sResources,
       List<String> mitigations) {}
+
+  public boolean isEnabled() {
+    return enabled;
+  }
 }
