@@ -73,9 +73,6 @@ management:
     tags:
       application: ${spring.application.name}
       environment: ${spring.profiles.active:default}
-    export:
-      prometheus:
-        enabled: true
     distribution:
       percentiles-histogram:
         http.server.requests: true
@@ -97,6 +94,10 @@ management:
       enabled: true
     diskspace:
       enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 # Logging Configuration
 logging:
