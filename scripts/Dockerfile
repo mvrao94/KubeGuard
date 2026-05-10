@@ -1,36 +1,23 @@
 # Multi-stage Dockerfile for KubeGuard
-# Supports both local builds and CI/CD with pre-built artifacts
-
-# Build arguments
-ARG SKIP_BUILD=false
-ARG APP_VERSION=latest
-ARG BUILD_DATE
-ARG VCS_REF
+# Optimized with Spring Boot Layering and Security Best Practices
 
 # ============================================================================
 # Build stage - Maven compilation with dependency caching
 # ============================================================================
 FROM maven:3.9.11-eclipse-temurin-25 AS builder
-ARG SKIP_BUILD
-
 WORKDIR /app
 
-# Copy POM and target directory (target will have JAR in CI mode)
-COPY pom.xml* ./
-COPY target target
-
 # Download dependencies with cache mount for faster rebuilds
-RUN --mount=type=cache,target=/root/.m2 \
-    if [ "$SKIP_BUILD" = "false" ]; then \
-      mvn dependency:go-offline -B; \
-    fi
+COPY pom.xml ./
+RUN --mount=type=cache,target=/root/.m2 mvn dependency:go-offline -B
 
-# Copy source and build (only if not skipping)
+# Copy source and build
 COPY src ./src
-RUN --mount=type=cache,target=/root/.m2 \
-    if [ "$SKIP_BUILD" = "false" ]; then \
-      mvn clean package -DskipTests -B; \
-    fi
+RUN --mount=type=cache,target=/root/.m2 mvn clean package -DskipTests -B
+
+# Extract Spring Boot layers (removes plain jar first to avoid ambiguity)
+RUN rm -f target/*-plain.jar && \
+    java -Djarmode=layertools -jar target/*.jar extract --destination target/extracted
 
 # ============================================================================
 # Runtime stage - Minimal JRE image
@@ -57,11 +44,12 @@ RUN mkdir -p /app/logs /app/config /tmp && \
 
 WORKDIR /app
 
-# Copy application JAR
-# In local mode: JAR is built in builder stage
-# In CI mode: JAR is copied from host target/ directory
-ARG SKIP_BUILD=false
-COPY --from=builder --chown=kubeguard:kubeguard /app/target/*.jar ./kubeguard.jar
+# Copy Spring Boot layers from builder
+COPY --from=builder --chown=kubeguard:kubeguard /app/target/extracted/dependencies/ ./
+COPY --from=builder --chown=kubeguard:kubeguard /app/target/extracted/spring-boot-loader/ ./
+# Use wildcard for snapshot-dependencies to avoid failure if the layer is empty/omitted
+COPY --from=builder --chown=kubeguard:kubeguard /app/target/extracted/snapshot-dependencies* ./
+COPY --from=builder --chown=kubeguard:kubeguard /app/target/extracted/application/ ./
 
 # Switch to non-root user
 USER kubeguard
@@ -94,7 +82,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:${SERVER_PORT}/actuator/health/liveness || exit 1
 
 # OCI standard labels with build metadata
-ARG APP_VERSION
+ARG APP_VERSION=latest
 ARG BUILD_DATE
 ARG VCS_REF
 LABEL org.opencontainers.image.title="KubeGuard" \
@@ -116,4 +104,4 @@ CMD ["sh", "-c", "\
         export JAVA_TOOL_OPTIONS=\"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${DEBUG_PORT} ${JAVA_TOOL_OPTIONS}\"; \
         echo \"Debug mode enabled on port ${DEBUG_PORT}\"; \
     fi; \
-    exec java $JAVA_OPTS -jar kubeguard.jar"]
+    exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]
