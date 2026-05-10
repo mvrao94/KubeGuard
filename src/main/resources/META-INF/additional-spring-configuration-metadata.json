@@ -1,0 +1,151 @@
+{
+  "groups": [
+    {
+      "name": "kubeguard",
+      "type": "java.lang.Object",
+      "description": "Application specific configuration for KubeGuard."
+    },
+    {
+      "name": "kubeguard.security",
+      "type": "java.lang.Object",
+      "description": "Security configuration."
+    },
+    {
+      "name": "kubeguard.security.rules",
+      "type": "java.lang.Object",
+      "description": "Rules configuration."
+    },
+    {
+      "name": "kubeguard.security.scan",
+      "type": "java.lang.Object",
+      "description": "Scan configuration."
+    },
+    {
+      "name": "kubeguard.kubernetes",
+      "type": "java.lang.Object",
+      "description": "Kubernetes client configuration."
+    },
+    {
+      "name": "kubeguard.nvd",
+      "type": "java.lang.Object",
+      "description": "NIST NVD Integration."
+    },
+    {
+      "name": "kubeguard.mitre",
+      "type": "java.lang.Object",
+      "description": "MITRE ATT&CK Integration."
+    },
+    {
+      "name": "spring.h2.console",
+      "type": "java.lang.Object",
+      "description": "H2 Console configuration."
+    },
+    {
+      "name": "spring.h2.console.settings",
+      "type": "java.lang.Object",
+      "description": "H2 Console settings."
+    }
+  ],
+  "properties": [
+    {
+      "name": "kubeguard.security.api-key",
+      "type": "java.lang.String",
+      "description": "API Key for authentication."
+    },
+    {
+      "name": "kubeguard.security.require-api-key",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Whether an API key is required."
+    },
+    {
+      "name": "kubeguard.security.rules.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true
+    },
+    {
+      "name": "kubeguard.security.rules.strict-mode",
+      "type": "java.lang.Boolean",
+      "defaultValue": false
+    },
+    {
+      "name": "kubeguard.security.scan.max-concurrent",
+      "type": "java.lang.Integer",
+      "defaultValue": 5
+    },
+    {
+      "name": "kubeguard.security.scan.timeout-minutes",
+      "type": "java.lang.Integer",
+      "defaultValue": 30
+    },
+    {
+      "name": "kubeguard.security.scan.cleanup-days",
+      "type": "java.lang.Integer",
+      "defaultValue": 30
+    },
+    {
+      "name": "kubeguard.kubernetes.connection-timeout",
+      "type": "java.time.Duration",
+      "defaultValue": "10s"
+    },
+    {
+      "name": "kubeguard.kubernetes.read-timeout",
+      "type": "java.time.Duration",
+      "defaultValue": "30s"
+    },
+    {
+      "name": "kubeguard.kubernetes.retry-attempts",
+      "type": "java.lang.Integer",
+      "defaultValue": 3
+    },
+    {
+      "name": "kubeguard.nvd.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": false
+    },
+    {
+      "name": "kubeguard.nvd.api-key",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "kubeguard.nvd.sync-enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": false
+    },
+    {
+      "name": "kubeguard.nvd.sync-cron",
+      "type": "java.lang.String",
+      "defaultValue": "0 0 2 * * ?"
+    },
+    {
+      "name": "kubeguard.nvd.results-per-page",
+      "type": "java.lang.Integer",
+      "defaultValue": 20
+    },
+    {
+      "name": "kubeguard.mitre.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true
+    },
+    {
+      "name": "kubeguard.mitre.auto-load",
+      "type": "java.lang.Boolean",
+      "defaultValue": true
+    },
+    {
+      "name": "spring.h2.console.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true
+    },
+    {
+      "name": "spring.h2.console.path",
+      "type": "java.lang.String",
+      "defaultValue": "/h2-console"
+    },
+    {
+      "name": "spring.h2.console.settings.web-allow-others",
+      "type": "java.lang.Boolean",
+      "defaultValue": false
+    }
+  ]
+}

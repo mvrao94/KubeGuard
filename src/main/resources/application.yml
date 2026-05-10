@@ -1,4 +1,10 @@
 # application.yml - Main application configuration
+
+# Project metadata from pom.xml
+project:
+  version: @project.version@
+  description: @project.description@
+
 server:
   port: 8080
   servlet:
@@ -14,11 +20,6 @@ spring:
     error:
       include-message: always
       include-binding-errors: always
-
-# Project metadata from pom.xml
-project:
-  version: @project.version@
-  description: @project.description@
 
   # Database Configuration
   datasource:
@@ -50,7 +51,6 @@ project:
   jackson:
     default-property-inclusion: non_null
     serialization:
-      write-dates-as-timestamps: false
       indent-output: true
     deserialization:
       fail-on-unknown-properties: false
@@ -67,17 +67,15 @@ management:
       show-details: always
       probes:
         enabled: true
-    prometheus:
-      enabled: true
   metrics:
     tags:
       application: ${spring.application.name}
       environment: ${spring.profiles.active:default}
     distribution:
       percentiles-histogram:
-        http.server.requests: true
+        "[http.server.requests]": true
       slo:
-        http.server.requests: 50ms,100ms,200ms,500ms,1s,2s
+        "[http.server.requests]": 50ms,100ms,200ms,500ms,1s,2s
   info:
     env:
       enabled: true
@@ -102,12 +100,12 @@ management:
 # Logging Configuration
 logging:
   level:
-    io.github.mvrao94.kubeguard: INFO
-    io.kubernetes: WARN
-    org.springframework.security: WARN
-    org.springframework.data.web: WARN
-    org.hibernate.SQL: WARN
-    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    "[io.github.mvrao94.kubeguard]": INFO
+    "[io.kubernetes]": WARN
+    "[org.springframework.security]": WARN
+    "[org.springframework.data.web]": WARN
+    "[org.hibernate.SQL]": WARN
+    "[org.hibernate.type.descriptor.sql.BasicBinder]": WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
