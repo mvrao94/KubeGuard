@@ -162,28 +162,30 @@ class MitreAttackClientTest {
     @Test
     void threadSafety_cachingWorksUnderConcurrency() throws InterruptedException {
         int numberOfThreads = 10;
-        ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
-        CountDownLatch latch = new CountDownLatch(numberOfThreads);
         AtomicInteger successCount = new AtomicInteger(0);
 
-        // Submit multiple threads that will call getKubernetesTechniques concurrently
-        for (int i = 0; i < numberOfThreads; i++) {
-            executor.submit(() -> {
-                try {
-                    List<MitreTechnique> techniques = client.getKubernetesTechniques();
-                    if (techniques != null && !techniques.isEmpty() &&
-                        techniques.stream().allMatch(t -> t.getTechniqueId() != null)) {
-                        successCount.incrementAndGet();
-                    }
-                } finally {
-                    latch.countDown();
-                }
-            });
-        }
+        // Use try-with-resources to ensure proper cleanup
+        try (ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads)) {
+            CountDownLatch latch = new CountDownLatch(numberOfThreads);
 
-        // Wait for all threads to complete
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
-        executor.shutdown();
+            // Submit multiple threads that will call getKubernetesTechniques concurrently
+            for (int i = 0; i < numberOfThreads; i++) {
+                executor.submit(() -> {
+                    try {
+                        List<MitreTechnique> techniques = client.getKubernetesTechniques();
+                        if (techniques != null && !techniques.isEmpty() &&
+                            techniques.stream().allMatch(t -> t.getTechniqueId() != null)) {
+                            successCount.incrementAndGet();
+                        }
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            // Wait for all threads to complete
+            assertTrue(latch.await(5, TimeUnit.SECONDS));
+        }
 
         // All threads should have succeeded
         assertEquals(numberOfThreads, successCount.get());
