@@ -58,11 +58,17 @@ jobs:
           SPRING_DATASOURCE_USERNAME: kubeguard
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
 
+      - name: Extract Spring Boot layers
+        run: |
+          rm -f target/*-plain.jar || true
+          java -Djarmode=layertools -jar target/*.jar extract --destination target/extracted
+          mkdir -p target/extracted/dependencies target/extracted/spring-boot-loader target/extracted/snapshot-dependencies target/extracted/application
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
-          name: kubeguard-jar
-          path: target/*.jar
+          name: kubeguard-layers
+          path: target/extracted/
           retention-days: 1
 
       - name: Generate test report
@@ -143,8 +149,8 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v7
         with:
-          name: kubeguard-jar
-          path: target
+          name: kubeguard-layers
+          path: target/extracted
 
       - name: Set up JDK 25
         uses: actions/setup-java@v5
@@ -192,13 +198,12 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: scripts/Dockerfile
+          file: scripts/Dockerfile.ci
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            SKIP_BUILD=true
             APP_VERSION=${{ steps.version.outputs.version }}
             BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
             VCS_REF=${{ github.sha }}
