@@ -43,12 +43,17 @@ public class MitreAttackClient {
     if (cachedTechniques == null) {
       synchronized (this) {
         if (cachedTechniques == null) {
-          cachedTechniques = loadTechniques();
-          // Build lookup maps for O(1) access
-          techniquesById = cachedTechniques.stream()
+          // Fully initialize all fields before assigning to volatile
+          List<MitreTechnique> techniques = loadTechniques();
+          Map<String, MitreTechnique> idMap = techniques.stream()
               .collect(Collectors.toConcurrentMap(MitreTechnique::getTechniqueId, Function.identity()));
-          techniquesByTactic = cachedTechniques.stream()
+          Map<String, List<MitreTechnique>> tacticMap = techniques.stream()
               .collect(Collectors.groupingByConcurrent(MitreTechnique::getTactic));
+
+          // Assign to volatile fields as the last step
+          techniquesById = idMap;
+          techniquesByTactic = tacticMap;
+          cachedTechniques = techniques;
 
           logger.info("Loaded and cached {} MITRE ATT&CK techniques", cachedTechniques.size());
         }
