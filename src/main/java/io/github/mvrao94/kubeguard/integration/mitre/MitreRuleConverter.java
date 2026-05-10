@@ -1,56 +1,47 @@
 package io.github.mvrao94.kubeguard.integration.mitre;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import org.springframework.stereotype.Component;
-
 import io.github.mvrao94.kubeguard.rules.InformationalSecurityRule;
 import io.github.mvrao94.kubeguard.rules.RuleCategory;
 import io.github.mvrao94.kubeguard.rules.RuleMetadata;
 import io.github.mvrao94.kubeguard.rules.RuleSeverity;
 import io.github.mvrao94.kubeguard.rules.SecurityRule;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import org.springframework.stereotype.Component;
 
-// MitreSecurityRule extends InformationalSecurityRule to avoid copy-pasting no-op evaluate/appliesTo/getSupportedResourceTypes
+// MitreSecurityRule extends InformationalSecurityRule to avoid copy-pasting no-op
+// evaluate/appliesTo/getSupportedResourceTypes
 
-/**
- * Converts MITRE ATT&CK techniques to KubeGuard security rules
- */
+/** Converts MITRE ATT&CK techniques to KubeGuard security rules */
 @Component
 public class MitreRuleConverter {
-  
-  /**
-   * Convert MITRE technique to SecurityRule
-   */
+
+  /** Convert MITRE technique to SecurityRule */
   public SecurityRule convertToRule(MitreTechnique technique) {
     return new MitreSecurityRule(technique);
   }
-  
-  /**
-   * Convert multiple techniques to rules
-   */
+
+  /** Convert multiple techniques to rules */
   public List<SecurityRule> convertToRules(List<MitreTechnique> techniques) {
     return techniques.stream()
         .filter(MitreTechnique::isAppliesToKubernetes)
         .map(this::convertToRule)
         .toList();
   }
-  
-  /**
-   * Inner class implementing SecurityRule for MITRE techniques
-   */
+
+  /** Inner class implementing SecurityRule for MITRE techniques */
   private static class MitreSecurityRule extends InformationalSecurityRule {
-    
+
     private final RuleMetadata metadata;
-    
+
     public MitreSecurityRule(MitreTechnique technique) {
       this.metadata = buildMetadata(technique);
     }
-    
+
     private RuleMetadata buildMetadata(MitreTechnique technique) {
       RuleMetadata meta = new RuleMetadata();
-      
+
       // Basic info
       meta.setId("MITRE-" + technique.getTechniqueId());
       meta.setTitle(technique.getTechniqueId() + ": " + technique.getName());
@@ -58,49 +49,47 @@ public class MitreRuleConverter {
       meta.setSeverity(mapSeverityByTactic(technique.getTactic()));
       meta.setCategory(mapCategory(technique.getTactic()));
       meta.setEnabled(true);
-      
+
       // Remediation from mitigations
       if (technique.getMitigations() != null && !technique.getMitigations().isEmpty()) {
         meta.setRemediation("Mitigations: " + String.join("; ", technique.getMitigations()));
       }
-      
+
       // MITRE ATT&CK mapping
       meta.setMitreAttack(Set.of(technique.getTechniqueId()));
-      
+
       // References
       List<String> refs = new ArrayList<>();
       refs.add(technique.getUrl());
       refs.add("https://attack.mitre.org/matrices/enterprise/containers/");
       meta.setReferences(refs);
-      
+
       // Tags
       List<String> tags = new ArrayList<>();
       tags.add("mitre-attack");
       tags.add(technique.getTactic().toLowerCase().replace(" ", "-"));
       tags.add(technique.getTechniqueId());
       if (technique.getKubernetesResources() != null) {
-        tags.addAll(technique.getKubernetesResources().stream()
-            .map(String::toLowerCase)
-            .toList());
+        tags.addAll(technique.getKubernetesResources().stream().map(String::toLowerCase).toList());
       }
       meta.setTags(tags);
-      
+
       meta.setVersion("1.0");
       meta.setAuthor("MITRE ATT&CK");
-      
+
       return meta;
     }
-    
+
     private RuleSeverity mapSeverityByTactic(String tactic) {
       return switch (tactic) {
         case "Initial Access", "Execution" -> RuleSeverity.CRITICAL;
-        case "Persistence", "Privilege Escalation", "Credential Access" -> RuleSeverity.HIGH;
+        case "Persistence", "Privilege Escalation", "Credential Access", "Collection", "Impact" ->
+            RuleSeverity.HIGH;
         case "Defense Evasion", "Discovery", "Lateral Movement" -> RuleSeverity.MEDIUM;
-        case "Collection", "Impact" -> RuleSeverity.HIGH;
         default -> RuleSeverity.MEDIUM;
       };
     }
-    
+
     private RuleCategory mapCategory(String tactic) {
       return switch (tactic) {
         case "Initial Access", "Execution" -> RuleCategory.POD_SECURITY;
@@ -114,7 +103,7 @@ public class MitreRuleConverter {
         default -> RuleCategory.SECURITY_CONTEXT;
       };
     }
-    
+
     @Override
     public RuleMetadata getMetadata() {
       return metadata;
