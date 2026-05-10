@@ -6,13 +6,14 @@ server:
   compression:
     enabled: true
     mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
-  error:
-    include-message: always
-    include-binding-errors: always
 
 spring:
   application:
     name: KubeGuard
+  web:
+    error:
+      include-message: always
+      include-binding-errors: always
 
 # Project metadata from pom.xml
 project:
