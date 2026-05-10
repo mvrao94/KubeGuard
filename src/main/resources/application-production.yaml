@@ -35,13 +35,7 @@ management:
       show-details: when_authorized
       probes:
         enabled: true
-    prometheus:
-      enabled: true
   metrics:
-    export:
-      prometheus:
-        enabled: true
-        step: 1m
     distribution:
       percentiles-histogram:
         http.server.requests: true
@@ -50,3 +44,8 @@ management:
       enabled: true
     readinessState:
       enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+        step: 1m
