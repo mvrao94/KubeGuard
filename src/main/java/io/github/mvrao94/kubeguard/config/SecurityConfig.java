@@ -25,6 +25,7 @@ public class SecurityConfig {
   }
 
   @Bean
+  @SuppressWarnings("java:S4502") // Safe: Stateless API using API keys, not session cookies
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.csrf(AbstractHttpConfigurer::disable)
         .sessionManagement(

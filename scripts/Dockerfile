@@ -4,7 +4,7 @@
 # ============================================================================
 # Build stage - Maven compilation with dependency caching
 # ============================================================================
-FROM maven:3.9.11-eclipse-temurin-25 AS builder
+FROM maven:3-eclipse-temurin-25 AS builder
 WORKDIR /app
 
 # Download dependencies with cache mount for faster rebuilds
@@ -86,22 +86,22 @@ ARG APP_VERSION=latest
 ARG BUILD_DATE
 ARG VCS_REF
 LABEL org.opencontainers.image.title="KubeGuard" \
-      org.opencontainers.image.description="Kubernetes Security Scanner and Policy Enforcement" \
-      org.opencontainers.image.version="$APP_VERSION" \
-      org.opencontainers.image.created="$BUILD_DATE" \
-      org.opencontainers.image.revision="$VCS_REF" \
-      org.opencontainers.image.vendor="KubeGuard Team" \
-      org.opencontainers.image.source="https://github.com/mvrao94/KubeGuard" \
-      org.opencontainers.image.documentation="https://github.com/mvrao94/KubeGuard/blob/main/README.md" \
-      org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.url="https://github.com/mvrao94/KubeGuard" \
-      maintainer="KubeGuard Team"
+    org.opencontainers.image.description="Kubernetes Security Scanner and Policy Enforcement" \
+    org.opencontainers.image.version="$APP_VERSION" \
+    org.opencontainers.image.created="$BUILD_DATE" \
+    org.opencontainers.image.revision="$VCS_REF" \
+    org.opencontainers.image.vendor="KubeGuard Team" \
+    org.opencontainers.image.source="https://github.com/mvrao94/KubeGuard" \
+    org.opencontainers.image.documentation="https://github.com/mvrao94/KubeGuard/blob/main/README.md" \
+    org.opencontainers.image.licenses="MIT" \
+    org.opencontainers.image.url="https://github.com/mvrao94/KubeGuard" \
+    maintainer="KubeGuard Team"
 
 # Entrypoint with conditional debug mode
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["sh", "-c", "\
     if [ \"$ENABLE_DEBUG\" = \"true\" ]; then \
-        export JAVA_TOOL_OPTIONS=\"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${DEBUG_PORT} ${JAVA_TOOL_OPTIONS}\"; \
-        echo \"Debug mode enabled on port ${DEBUG_PORT}\"; \
+    export JAVA_TOOL_OPTIONS=\"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${DEBUG_PORT} ${JAVA_TOOL_OPTIONS}\"; \
+    echo \"Debug mode enabled on port ${DEBUG_PORT}\"; \
     fi; \
     exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]
