@@ -43,6 +43,7 @@ public class MitreAttackClient {
         if (cachedTechniques == null) {
           // Fully initialize all fields before assigning to volatile
           List<MitreTechnique> techniques = loadTechniques();
+          int techniqueCount = techniques.size();
           Map<String, MitreTechnique> idMap =
               techniques.stream()
                   .collect(
@@ -57,7 +58,7 @@ public class MitreAttackClient {
           techniquesByTactic = tacticMap;
           cachedTechniques = techniques;
 
-          logger.info("Loaded and cached {} MITRE ATT&CK techniques", cachedTechniques.size());
+          logger.info("Loaded and cached {} MITRE ATT&CK techniques", techniqueCount);
         }
       }
     }
