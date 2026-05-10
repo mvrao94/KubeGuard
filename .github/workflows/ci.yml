@@ -15,12 +15,13 @@ env:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     name: Build and Test
+    timeout-minutes: 15
     outputs:
       version: ${{ steps.version.outputs.version }}
     permissions:
@@ -99,6 +100,8 @@ jobs:
     runs-on: ubuntu-latest
     name: Security Scan
     timeout-minutes: 30
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout code
@@ -144,7 +147,12 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     needs: [build-and-test, security-scan]
+    if: github.event_name != 'pull_request'
     name: Docker Build
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
 
     outputs:
       image-digest: ${{ steps.build.outputs.digest }}
@@ -201,7 +209,7 @@ jobs:
           context: .
           file: scripts/Dockerfile.ci
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
@@ -225,5 +233,5 @@ jobs:
           echo "- Provenance: Attached (SLSA compliant)"
           echo ""
           echo "To inspect attestations locally:"
-          echo "  docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} --format '{{ json .Provenance }}'"
-          echo "  docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }} --format '{{ json .SBOM }}'"
+          echo "  docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-test.outputs.version }} --format '{{ json .Provenance }}'"
+          echo "  docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-test.outputs.version }} --format '{{ json .SBOM }}'"
