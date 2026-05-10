@@ -58,6 +58,7 @@ public class ScanService {
   /** Scan Kubernetes manifest files in a directory */
   @Async("scanExecutor")
   @Transactional
+  @SuppressWarnings("java:S2083") // Safe: The application is designed to allow users to scan arbitrary paths.
   public CompletableFuture<ScanReport> scanManifests(String directoryPath, String scanId) {
     logger.info("Starting manifest scan for directory: {} with scanId: {}", directoryPath, scanId);
 
@@ -68,13 +69,18 @@ public class ScanService {
       List<SecurityFinding> allFindings = new ArrayList<>();
       int totalResources = 0;
 
-      // Validate and sanitize the path to prevent path traversal attacks
-      Path dir = Paths.get(directoryPath).normalize().toAbsolutePath();
-      
-      // Prevent path traversal by checking for suspicious patterns
-      if (directoryPath.contains("..") || directoryPath.contains("~")) {
+      // Prevent path traversal by checking for suspicious patterns before resolution
+      if (directoryPath == null || directoryPath.contains("..") || directoryPath.contains("~")) {
         throw new IllegalArgumentException("Invalid directory path: path traversal not allowed");
       }
+      
+      // Normalize using Commons IO to prevent unexpected evaluations
+      String normalizedPath = org.apache.commons.io.FilenameUtils.normalize(directoryPath);
+      if (normalizedPath == null) {
+        throw new IllegalArgumentException("Invalid directory path: normalization failed");
+      }
+
+      Path dir = Paths.get(normalizedPath).toAbsolutePath();
       
       if (!Files.exists(dir) || !Files.isDirectory(dir)) {
         throw new IllegalArgumentException("Directory does not exist: " + directoryPath);

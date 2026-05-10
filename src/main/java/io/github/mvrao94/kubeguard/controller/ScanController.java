@@ -59,6 +59,10 @@ public class ScanController {
     return r;
   }
 
+  private String sanitizeLog(String input) {
+    return input == null ? null : input.replaceAll("[\r\n]", "_");
+  }
+
   @Operation(
       summary = "Scan Kubernetes manifest files",
       description =
@@ -103,7 +107,7 @@ public class ScanController {
           @Valid
           @RequestBody
           ScanRequest request) {
-    logger.info("Received manifest scan request for path: {}", request.getPath());
+    logger.info("Received manifest scan request for path: {}", sanitizeLog(request.getPath()));
 
     try {
       String scanId = UUID.randomUUID().toString();
@@ -165,7 +169,7 @@ public class ScanController {
           @PathVariable
           String namespace) {
 
-    logger.info("Received cluster scan request for namespace: {}", namespace);
+    logger.info("Received cluster scan request for namespace: {}", sanitizeLog(namespace));
 
     try {
       String scanId = UUID.randomUUID().toString();
@@ -212,14 +216,14 @@ public class ScanController {
           @PathVariable
           String scanId) {
 
-    logger.debug("Retrieving scan status for scanId: {}", scanId);
+    logger.debug("Retrieving scan status for scanId: {}", sanitizeLog(scanId));
 
     Optional<ScanReport> report = scanService.getScanReport(scanId);
 
     if (report.isPresent()) {
       return ResponseEntity.ok(report.get());
     } else {
-      logger.warn("Scan report not found for scanId: {}", scanId);
+      logger.warn("Scan report not found for scanId: {}", sanitizeLog(scanId));
       return ResponseEntity.notFound().build();
     }
   }

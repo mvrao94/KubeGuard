@@ -22,6 +22,10 @@ public abstract class BaseIntegrationService {
 
   protected abstract String getIntegrationName();
 
+  private String sanitizeLog(String input) {
+    return input == null ? null : input.replaceAll("[\r\n]", "_");
+  }
+
   /**
    * Executes the common fetch → convert → register pipeline.
    * Subclasses supply the fetch-and-convert step via a supplier lambda.
@@ -36,15 +40,15 @@ public abstract class BaseIntegrationService {
       return 0;
     }
 
-    logger.info("Loading {} rules ({})", getIntegrationName(), context);
+    logger.info("Loading {} rules ({})", getIntegrationName(), sanitizeLog(context));
 
     try {
       List<SecurityRule> rules = rulesSupplier.get();
       getRuleRegistry().registerRules(rules);
-      logger.info("Successfully loaded {} {} rules ({})", rules.size(), getIntegrationName(), context);
+      logger.info("Successfully loaded {} {} rules ({})", rules.size(), getIntegrationName(), sanitizeLog(context));
       return rules.size();
     } catch (Exception e) {
-      logger.error("Error loading {} rules ({}): {}", getIntegrationName(), context, e.getMessage(), e);
+      logger.error("Error loading {} rules ({}): {}", getIntegrationName(), sanitizeLog(context), e.getMessage(), e);
       return 0;
     }
   }
