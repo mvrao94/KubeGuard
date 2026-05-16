@@ -66,6 +66,17 @@
         <artifactId>bcpkix-jdk18on</artifactId>
         <version>${bouncycastle.version}</version>
       </dependency>
+      <!-- Override Spring Boot managed Tomcat versions to fix CVEs in 11.0.21 -->
+      <dependency>
+        <groupId>org.apache.tomcat.embed</groupId>
+        <artifactId>tomcat-embed-core</artifactId>
+        <version>11.0.22</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tomcat.embed</groupId>
+        <artifactId>tomcat-embed-websocket</artifactId>
+        <version>11.0.22</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
