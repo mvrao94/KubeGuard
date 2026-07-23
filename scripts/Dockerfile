@@ -15,9 +15,9 @@ RUN --mount=type=cache,target=/root/.m2 mvn dependency:go-offline -B
 COPY src ./src
 RUN --mount=type=cache,target=/root/.m2 mvn clean package -DskipTests -B
 
-# Extract Spring Boot layers (removes plain jar first to avoid ambiguity)
+# Extract Spring Boot layers using the new layer-tools mode (Spring Boot 4.1+)
 RUN rm -f target/*-plain.jar && \
-    java -Djarmode=layertools -jar target/*.jar extract --destination target/extracted
+    java -jar target/*.jar extract --layers --destination target/extracted
 
 # ============================================================================
 # Runtime stage - Minimal JRE image

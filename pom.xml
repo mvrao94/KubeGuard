@@ -169,6 +169,11 @@
       <version>${testcontainers.postgresql.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-jarmode-layertools</artifactId>
+      <scope>runtime</scope>
+    </dependency>
   </dependencies>
 
   <build>
