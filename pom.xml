@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.6</version>
+    <version>4.1.0</version>
   </parent>
   <groupId>io.github.mvrao94</groupId>
   <artifactId>kubeguard</artifactId>
@@ -38,44 +38,32 @@
 
   <properties>
     <java.version>25</java.version>
-    <kubernetes-client.version>26.0.0</kubernetes-client.version>
+    <!-- Dependencies -->
+    <kubernetes-client.version>27.0.0</kubernetes-client.version>
     <apache-commons-io.version>2.22.0</apache-commons-io.version>
     <springdoc-openapi-starter-webmvc-ui.version>3.0.3</springdoc-openapi-starter-webmvc-ui.version>
     <testcontainers.junit-jupiter.version>1.21.4</testcontainers.junit-jupiter.version>
     <testcontainers.postgresql.version>1.21.4</testcontainers.postgresql.version>
-    <native-maven-plugin.version>1.1.0</native-maven-plugin.version>
-    <!-- CVE-2026-0636, CVE-2026-5588: force patched Bouncy Castle version for all BC artifacts -->
     <bouncycastle.version>1.84</bouncycastle.version>
-    <!-- CVE-2026-42198: SCRAM PBKDF2 unbounded iterations DoS in pgjdbc < 42.7.11 -->
-    <postgresql.version>42.7.11</postgresql.version>
+    <postgresql.version>42.7.13</postgresql.version>
+    <!-- Plugins -->
+    <native-maven-plugin.version>1.1.6</native-maven-plugin.version>
+    <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
+    <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
+    <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-      <!-- Force bcprov-jdk18on to 1.84 to remediate CVE-2026-0636 (LDAP injection, affects 1.74–1.83)
-           pulled in transitively by io.kubernetes:client-java -->
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-jdk18on</artifactId>
         <version>${bouncycastle.version}</version>
       </dependency>
-      <!-- Force bcpkix-jdk18on to 1.84 to remediate CVE-2026-5588 (affects 1.83)
-           pulled in transitively by io.kubernetes:client-java -->
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcpkix-jdk18on</artifactId>
         <version>${bouncycastle.version}</version>
-      </dependency>
-      <!-- Override Spring Boot managed Tomcat versions to fix CVEs in 11.0.21 -->
-      <dependency>
-        <groupId>org.apache.tomcat.embed</groupId>
-        <artifactId>tomcat-embed-core</artifactId>
-        <version>11.0.22</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.tomcat.embed</groupId>
-        <artifactId>tomcat-embed-websocket</artifactId>
-        <version>11.0.22</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -201,7 +189,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.3</version>
+        <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <includes>
             <include>**/*Test.java</include>
@@ -214,7 +202,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.13</version>
+        <version>${jacoco-maven-plugin.version}</version>
         <executions>
           <execution>
             <goals>
@@ -234,7 +222,7 @@
       <plugin>
         <groupId>com.github.ekryd.sortpom</groupId>
         <artifactId>sortpom-maven-plugin</artifactId>
-        <version>4.0.0</version>
+        <version>${sortpom-maven-plugin.version}</version>
         <executions>
           <execution>
             <goals>
