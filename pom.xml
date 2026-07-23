@@ -183,18 +183,7 @@
               <artifactId>lombok</artifactId>
             </exclude>
           </excludes>
-          <layers>
-            <enabled>true</enabled>
-          </layers>
         </configuration>
-        <executions>
-          <execution>
-            <id>extract-layers</id>
-            <goals>
-              <goal>build-info</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
 
       <plugin>

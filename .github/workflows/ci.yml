@@ -64,7 +64,7 @@ jobs:
       - name: Extract Spring Boot layers
         run: |
           rm -f target/*-plain.jar || true
-          java -Djarmode=layertools -jar target/*.jar extract --destination target/extracted
+          java -Djarmode=tools -jar target/*.jar extract --layers --destination target/extracted
           mkdir -p target/extracted/dependencies target/extracted/spring-boot-loader target/extracted/snapshot-dependencies target/extracted/application
 
       - name: Extract version
