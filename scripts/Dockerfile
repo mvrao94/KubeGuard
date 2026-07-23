@@ -11,13 +11,9 @@ WORKDIR /app
 COPY pom.xml ./
 RUN --mount=type=cache,target=/root/.m2 mvn dependency:go-offline -B
 
-# Copy source and build
-COPY src ./src
+# Build and extract Spring Boot layers using Maven
 RUN --mount=type=cache,target=/root/.m2 mvn clean package -DskipTests -B
-
-# Extract Spring Boot layers using the new layer-tools mode (Spring Boot 4.1+)
-RUN rm -f target/*-plain.jar && \
-    java -jar target/*.jar extract --layers --destination target/extracted
+RUN cd target && java -Dspring.boot.jarmode.enable=layertools -jar *.jar extract && cd ..
 
 # ============================================================================
 # Runtime stage - Minimal JRE image
